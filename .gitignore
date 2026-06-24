@@ -67,3 +67,10 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# codebase-index cache (machine-local; do not commit)
+.claude/cache/codebase-index/
+
+# agents
+.opencode/
+session-*
