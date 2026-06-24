@@ -1,0 +1,81 @@
+# AGENTS.md
+
+Repository guidance for future coding agents. Start here before changing code.
+
+## Read Order
+
+1. Read this file.
+2. Read `docs/INFO.md` for the short project summary and current feature state.
+3. Read `docs/STACK.md` for language, libraries, build, deploy, and runtime notes.
+4. Read `docs/ARCHITECTURE.md` for planned component boundaries and data flow.
+5. Read `docs/ROADMAP.md` for planned work and known future directions.
+6. Read `docs/LAST_CHANGES.md` and `docs/CHANGELOGS.md` before editing, so new work continues from the latest context.
+7. Read `session-ses_115d.md` for planning context and `session-ses_114d.md` for the initial development context when making architecture-level changes.
+
+This is useful, but not guaranteed automatically by every agent runtime. Agents that support repository instructions often auto-load `AGENTS.md`; agents that do not should be explicitly told to read it.
+
+## Documentation Maintenance Rule
+
+After any project change, update the context docs when relevant:
+
+- Update `docs/INFO.md` if user-visible features, behavior, requirements, or known limitations change.
+- Update `docs/STACK.md` if language version, dependencies, deployment, environment variables, or infrastructure change.
+- Update `docs/ARCHITECTURE.md` if component responsibilities, data flow, storage model, or runtime flow change.
+- Update `docs/ROADMAP.md` if planned work, priorities, or known future directions change.
+- Update `docs/LAST_CHANGES.md` with the newest concise summary.
+- Append a dated entry to `docs/CHANGELOGS.md` for every completed change, including documentation-only changes.
+
+Keep changelog entries newest first. Mention files or areas touched, why they changed, and any verification done.
+
+## Optional Codebase Index
+
+If the `codebase-index` tool is available and the local index is fresh, use it before broad manual scans for architecture, symbol, reference, impact, or data-flow questions:
+
+```sh
+codebase-index explain "architecture overview" --token-budget 3000 --json
+codebase-index search "query" --json
+codebase-index symbol "SymbolName" --json
+codebase-index refs "SymbolName" --json
+codebase-index impact "path/or/symbol" --json
+```
+
+If the index is missing, run `codebase-index index`. If it is stale, run `codebase-index update` for small changes or `codebase-index index` for a full rebuild. Always verify important conclusions in the source files before editing.
+
+## Project Map
+
+- `CMakeLists.txt` defines the current declarations-only `buzzweb_server` `INTERFACE` library and `BuzzWeb::Server` alias.
+- `Dockerfile` defines a Debian 12 build environment with CMake, Ninja, Boost, OpenSSL, and `nlohmann_json` packages.
+- `include/buzzweb/domain/` contains room-domain declarations: `Room`, `Participant`, and `RoomRepository`.
+- `include/buzzweb/app/` contains application-layer declarations: `RoomService` and `ControlDispatcher`.
+- `include/buzzweb/net/` contains networking declarations: `Server`, `Listener`, `Session`, and `SessionRegistry`.
+- `session-ses_115d.md` contains planning context for WebRTC, WSS signaling, deployment, CMake, and domain/repository design.
+- `session-ses_114d.md` contains the initial development session that created the current skeleton and naming conventions.
+- `docs/` contains persistent project context for agents.
+
+There is currently no `src/` directory, no executable target, and no method definitions.
+
+## Coding Guidelines
+
+- Use C++20 and the existing CMake project `BuzzWebServer`.
+- Preserve the current public include style: `#include "buzzweb/..."` from the `include/` root.
+- Current method/function naming uses PascalCase, with examples like `CreateRoom()`, `FindByCode()`, `GetName()`, and `Start()`.
+- Type aliases and classes use PascalCase, such as `RoomCode`, `ParticipantId`, `RoomRepository`, and `SessionRegistry`.
+- Private fields currently use trailing underscores, such as `code_`, `participants_`, and `repository_`.
+- Keep WebRTC media out of the server for the first phase. The server is for WebSocket/WSS control and signaling only.
+- Do not send voice/video media over WebSocket except for explicit experiments; media should use WebRTC.
+- Keep domain classes free of Boost, JSON, OpenSSL, WebSocket, SDP, ICE, and network-session details.
+- Let `RoomService` own application-level room mutations. Network classes should call application services instead of modifying rooms directly.
+- Current `Room` stores participants in `std::vector<Participant>`, not `std::unordered_map`, because the MVP is expected to use small rooms.
+- Current `Participant` is intentionally minimal: identity and display name only.
+- Keep `RoomRepository` as a storage abstraction so in-memory, Redis, or PostgreSQL storage can be added later.
+- Prefer small, direct changes that match the current declarations-first stage.
+
+## Local Verification Policy
+
+Local verification depends on installed dependencies.
+
+- `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug` was previously attempted and reached dependency discovery, but failed because Boost package config was not installed/configured on this Windows host.
+- Docker CLI was previously present, but Docker Desktop's Linux engine was not running, so `docker build` could not be used for verification.
+- If local Boost/OpenSSL/`nlohmann_json` packages or Docker are available, CMake/Docker verification is reasonable.
+- Do not install system dependencies, start Docker services, or change package-manager state unless the user explicitly asks.
+- If verification cannot run, verify by source inspection and clearly report the local dependency or Docker daemon limitation.
