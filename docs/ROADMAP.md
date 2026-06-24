@@ -2,6 +2,11 @@
 
 This file tracks planned implementation work and architecture decisions for `buzzweb-server`. Update it when priorities, contracts, or known future directions change.
 
+## Completed Decisions
+
+- 2026-06-24: Finalized the initial room-control JSON protocol shape for `create_room`, `join_room`, `leave_room`, `participant_joined`, `participant_left`, and generic request error responses. The canonical examples now live in `AGENTS.md`.
+- 2026-06-24: Clarified that `buzzweb-server` is a signaling-only server. WebRTC media transport belongs to clients and external infrastructure; this server only relays opaque offer/answer/ICE signaling payloads.
+
 ## Near Term
 
 - Add `src/` and provide implementations for the current domain and application declarations.
@@ -17,8 +22,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## MVP Signaling
 
-- Finalize the initial JSON protocol schemas for `create_room`, `join_room`, and `leave_room`.
-- Define `join_room` payload fields explicitly: `room_code`, `display_name`, and optional `password`.
+- Implement the finalized initial JSON protocol schemas for `create_room`, `join_room`, and `leave_room`.
 - Implement `ControlDispatcher` as the JSON routing layer that parses payloads, creates `Participant` values when needed, and calls `RoomService`.
 - Map typed `RoomService` results to stable JSON response and error codes.
 - Implement WebSocket/WSS accept and read/write loops.
@@ -26,7 +30,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Remove rooms when they become empty.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.
-- Implement offer/answer/ICE relay between participants.
+- Implement offer/answer/ICE relay between participants without parsing, validating, or terminating WebRTC media.
 - Add `participant_joined` and `participant_left` events.
 - Add basic logging for server lifecycle, sessions, room operations, and protocol errors.
 
@@ -55,13 +59,14 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Browser client using native WebRTC APIs.
 - Native desktop client using `libdatachannel` or `libwebrtc` plus PortAudio/miniaudio.
 - Room session tokens to allow reconnects.
-- TURN server credentials and short-lived ICE server configuration.
+- TURN server credentials and short-lived ICE server configuration for clients.
 - Video support after 1-to-1 voice works.
 - Group calls through an SFU such as Janus, LiveKit, Jitsi, mediasoup, or a dedicated custom SFU decision later.
 
 ## Engineering Ideas
 
 - Keep WebRTC media out of this repository unless the project scope changes from signaling server to client/media server.
+- Do not add `libwebrtc`, `libdatachannel`, RTP/RTCP handling, SFU, MCU, or media-relay behavior to the server unless the project scope explicitly changes.
 - If group calls become required, evaluate SFU integration before designing custom media forwarding.
 - Consider Redis only when multi-process or distributed room state is needed.
 - Consider PostgreSQL only when rooms/users/history must survive process restarts.

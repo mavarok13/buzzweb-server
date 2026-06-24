@@ -70,6 +70,197 @@ There is currently no `src/` directory, no executable target, and no method defi
 - Keep `RoomRepository` as a storage abstraction so in-memory, Redis, or PostgreSQL storage can be added later.
 - Prefer small, direct changes that match the current declarations-first stage.
 
+## JSON Protocol Guidance
+
+Initial room-control JSON schemas are decided for the MVP. Keep protocol changes compatible with this shape unless the user explicitly chooses a new schema.
+
+Client requests use a stable envelope with `type`, `request_id`, and `payload`:
+
+```json
+{
+  "type": "create_room",
+  "request_id": "req-001",
+  "payload": {}
+}
+```
+
+Direct responses include the same `request_id`, an `ok` boolean, and either `payload` or `error`:
+
+```json
+{
+  "type": "create_room_result",
+  "request_id": "req-001",
+  "ok": true,
+  "payload": {}
+}
+```
+
+Room events do not need `request_id` because they are pushed asynchronously:
+
+```json
+{
+  "type": "participant_joined",
+  "payload": {}
+}
+```
+
+`create_room` should create the room and join the creator automatically:
+
+```json
+{
+  "type": "create_room",
+  "request_id": "req-001",
+  "payload": {
+    "display_name": "Alice",
+    "password": "optional-room-password"
+  }
+}
+```
+
+```json
+{
+  "type": "create_room_result",
+  "request_id": "req-001",
+  "ok": true,
+  "payload": {
+    "room_code": "742913",
+    "participant": {
+      "participant_id": "p_01JZABC123",
+      "display_name": "Alice"
+    },
+    "participants": [
+      {
+        "participant_id": "p_01JZABC123",
+        "display_name": "Alice"
+      }
+    ]
+  }
+}
+```
+
+`join_room` requires `room_code` and `display_name`; `password` is optional:
+
+```json
+{
+  "type": "join_room",
+  "request_id": "req-002",
+  "payload": {
+    "room_code": "742913",
+    "display_name": "Bob",
+    "password": "optional-room-password"
+  }
+}
+```
+
+```json
+{
+  "type": "join_room_result",
+  "request_id": "req-002",
+  "ok": true,
+  "payload": {
+    "room_code": "742913",
+    "participant": {
+      "participant_id": "p_01JZDEF456",
+      "display_name": "Bob"
+    },
+    "participants": [
+      {
+        "participant_id": "p_01JZABC123",
+        "display_name": "Alice"
+      },
+      {
+        "participant_id": "p_01JZDEF456",
+        "display_name": "Bob"
+      }
+    ]
+  }
+}
+```
+
+Send `participant_joined` to existing room participants after a successful join:
+
+```json
+{
+  "type": "participant_joined",
+  "payload": {
+    "room_code": "742913",
+    "participant": {
+      "participant_id": "p_01JZDEF456",
+      "display_name": "Bob"
+    },
+    "participants": [
+      {
+        "participant_id": "p_01JZABC123",
+        "display_name": "Alice"
+      },
+      {
+        "participant_id": "p_01JZDEF456",
+        "display_name": "Bob"
+      }
+    ]
+  }
+}
+```
+
+`leave_room` uses the calling session participant identity and the target room code:
+
+```json
+{
+  "type": "leave_room",
+  "request_id": "req-003",
+  "payload": {
+    "room_code": "742913"
+  }
+}
+```
+
+```json
+{
+  "type": "leave_room_result",
+  "request_id": "req-003",
+  "ok": true,
+  "payload": {
+    "room_code": "742913"
+  }
+}
+```
+
+Send `participant_left` to remaining room participants after a successful leave:
+
+```json
+{
+  "type": "participant_left",
+  "payload": {
+    "room_code": "742913",
+    "participant_id": "p_01JZDEF456",
+    "participants": [
+      {
+        "participant_id": "p_01JZABC123",
+        "display_name": "Alice"
+      }
+    ]
+  }
+}
+```
+
+Use one stable error shape for failed requests:
+
+```json
+{
+  "type": "join_room_result",
+  "request_id": "req-002",
+  "ok": false,
+  "error": {
+    "code": "room_not_found",
+    "message": "Room was not found."
+  }
+}
+```
+
+Initial stable error codes: `invalid_json`, `invalid_message`, `missing_field`, `invalid_field`, `room_not_found`, `wrong_password`, `already_joined`, `room_full`, `not_in_room`, and `internal_error`.
+
+WebRTC signaling messages should be added after room control works, using the same envelope style for client requests and asynchronous relay events for `offer`, `answer`, and `ice_candidate`.
+
 ## Local Verification Policy
 
 Local verification depends on installed dependencies.

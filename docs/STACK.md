@@ -24,16 +24,16 @@ The project may later move from `INTERFACE` to a compiled library plus executabl
 
 Planned or possible later dependencies:
 
-- `libdatachannel` or `libwebrtc` for native client-side WebRTC work, if this repository grows beyond the server.
-- `coturn` for STUN/TURN infrastructure.
+- `coturn` for external STUN/TURN infrastructure used by clients.
+- `libdatachannel` or `libwebrtc` only for native client-side WebRTC work if this repository's scope later grows beyond the signaling server.
 - PostgreSQL, Redis, or SQLite only if persistent rooms/session state becomes necessary.
 - GoogleTest or Catch2 when tests are added.
 
 ## Runtime Services
 
 - WebSocket or WSS signaling endpoint served by this C++ server.
-- WebRTC media transport between clients. Media should not flow through WebSocket in the MVP.
-- STUN/TURN service, likely `coturn`, for NAT traversal once real WebRTC clients are tested.
+- WebRTC media transport between clients, outside this server. Media should not flow through WebSocket in the MVP.
+- STUN/TURN service, likely `coturn`, for client NAT traversal once real WebRTC clients are tested.
 - Optional reverse proxy such as Caddy or nginx for TLS termination, depending on deployment design.
 
 ## Runtime Configuration
@@ -56,7 +56,7 @@ Likely future settings:
 - `Dockerfile` uses `debian:12-slim` and installs `build-essential`, `cmake`, `ninja-build`, Boost, OpenSSL, `nlohmann_json`, and `pkg-config`.
 - Current Docker build command runs CMake configure and build, but there are no compiled sources yet.
 - No `docker-compose.yml` exists yet.
-- A realistic deployment will likely need the signaling server container plus `coturn`, and optionally a reverse proxy.
+- A realistic deployment will likely need the signaling server container plus external `coturn`, and optionally a reverse proxy.
 
 Likely future ports:
 

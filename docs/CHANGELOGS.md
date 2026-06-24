@@ -2,6 +2,21 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-06-24 - Signaling-Only WebRTC Boundary
+
+- Updated `docs/INFO.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md` to clarify that `buzzweb-server` is a signaling-only server, not a WebRTC media server.
+- Documented that clients and external infrastructure own WebRTC media transport, while the server only relays opaque offer/answer/ICE signaling payloads.
+- Explicitly kept RTP/RTCP handling, media encoding/decoding, peer connection ownership, SFU, MCU, and media-relay behavior out of server scope unless the project scope changes later.
+- Updated `docs/LAST_CHANGES.md` with the new documentation summary.
+- Verification: documentation inspection only.
+
+## 2026-06-24 - Initial JSON Protocol Shape
+
+- Added canonical room-control JSON request, response, event, and error examples to `AGENTS.md` for future agents.
+- Marked the initial JSON protocol shape decision complete in `docs/ROADMAP.md` and left implementation as the remaining MVP signaling work.
+- Updated `docs/INFO.md` and `docs/ARCHITECTURE.md` to reflect that the room-control schemas are finalized but not implemented.
+- Verification: documentation inspection only.
+
 ## 2026-06-24 - Roadmap Rewrite
 
 - Rewrote `docs/ROADMAP.md` in English around the current near-term implementation plan.

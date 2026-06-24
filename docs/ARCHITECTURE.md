@@ -1,6 +1,6 @@
 # Architecture
 
-`buzzweb-server` is intended to be a C++20 WebSocket/WSS signaling server for voice/video call rooms. The server should manage rooms, participants, and signaling messages. Real-time audio/video media should use WebRTC directly between clients for the first version.
+`buzzweb-server` is intended to be a C++20 WebSocket/WSS signaling server for voice/video call rooms. The server manages rooms, participants, and signaling messages only. It is not a WebRTC media server; real-time audio/video media should use WebRTC directly between clients for the first version.
 
 ## Current State
 
@@ -56,6 +56,7 @@ Network rules:
 
 - WebSocket/WSS is for control and signaling only.
 - Do not send microphone audio or video frames over WebSocket for the product MVP.
+- Treat SDP offers, SDP answers, and ICE candidates as opaque signaling payloads to relay; do not parse or terminate media in this server.
 - The network layer may use Boost.Asio, Boost.Beast, OpenSSL, and strings/JSON protocol data.
 
 ## Intended Runtime Flow
@@ -68,7 +69,7 @@ Network rules:
 6. RoomService performs room use cases and persists state through RoomRepository.
 7. ControlDispatcher returns responses or relay events.
 8. Session sends JSON responses/events to clients.
-9. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly.
+9. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
 
 ## Intended Signaling Messages
 
@@ -85,9 +86,11 @@ Planning sessions identified these message types as likely protocol operations:
 - `participant_joined`
 - `participant_left`
 
-Names and payload schemas are not implemented or finalized yet.
+Initial room-control schemas are now finalized for `create_room`, `join_room`, `leave_room`, `participant_joined`, `participant_left`, and generic request errors. The canonical request/response/event JSON examples live in `AGENTS.md`. WebRTC signaling schemas for `offer`, `answer`, and `ice_candidate` are still planned after room-control flow works.
 
 ## WebRTC Boundary
+
+`buzzweb-server` is WebRTC-aware only at the signaling boundary. It may route SDP offers, SDP answers, and ICE candidates as JSON data, but it should not link a WebRTC media library, decode media, receive RTP/RTCP packets, or behave as an SFU/MCU/media relay.
 
 Use WebRTC for:
 
@@ -105,6 +108,13 @@ Use WebSocket/WSS for:
 - WebRTC offer/answer relay.
 - ICE candidate relay.
 - Participant and call-state events.
+
+Out of scope for this server:
+
+- Audio/video capture, encoding, decoding, mixing, and playback.
+- RTP/RTCP packet handling.
+- WebRTC peer connection ownership.
+- SFU, MCU, or media-relay behavior unless the project scope is explicitly changed later.
 
 ## Storage Model
 

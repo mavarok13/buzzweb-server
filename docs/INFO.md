@@ -1,6 +1,6 @@
 # Info
 
-`buzzweb-server` is a C++20 server project for a self-hosted voice/video calling app. The current focus is the WebSocket/WSS control and signaling server for rooms and participants; media is planned to use WebRTC between clients.
+`buzzweb-server` is a C++20 WebSocket/WSS signaling server for a self-hosted voice/video calling app. It manages rooms, participants, and signaling messages; it does not implement WebRTC media transport. Voice/video media belongs to clients and WebRTC infrastructure outside this server.
 
 ## Current Project State
 
@@ -16,8 +16,8 @@
 - Join a room by room code.
 - Support optional room password hashes.
 - Track participants in a room.
-- Exchange WebRTC signaling messages through WebSocket/WSS: offers, answers, and ICE candidates.
-- Keep voice/video media outside the server, using WebRTC client-to-client transport for the first version.
+- Exchange WebRTC signaling messages through WebSocket/WSS as opaque JSON payloads: offers, answers, and ICE candidates.
+- Keep voice/video media outside the server; the first version should use client-to-client WebRTC media transport.
 - Deploy the signaling server on a self-hosted machine or VPS.
 
 ## Current Classes
@@ -37,7 +37,8 @@
 - No methods are implemented.
 - No executable starts the server.
 - No HTTP/WebSocket runtime behavior exists yet.
-- No protocol message schema is finalized beyond planning examples.
+- Initial room-control JSON envelopes and examples are finalized in `AGENTS.md`, but no protocol runtime behavior is implemented yet.
+- No WebRTC media stack is implemented or planned inside this server; SDP and ICE data should be relayed, not parsed as media.
 - No authentication, authorization, TURN integration, persistence, or room cleanup exists yet.
 - No automated tests are configured.
 - Local CMake verification currently depends on installing/configuring Boost, OpenSSL, and `nlohmann_json`.
