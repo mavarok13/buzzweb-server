@@ -1,15 +1,16 @@
 # Last Changes
 
-Updated: 2026-06-24
+Updated: 2026-06-25
 
 ## Current Documentation Update
 
-- Clarified the project scope as a signaling-only server, not a WebRTC media server.
-- Updated `docs/INFO.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md` to state that WebRTC media transport belongs to clients and external infrastructure.
-- Documented that `buzzweb-server` should relay SDP offers, SDP answers, and ICE candidates as opaque JSON payloads, without parsing media, receiving RTP/RTCP, or acting as an SFU/MCU/media relay.
+- Added agent guidance for thread-safe `RoomRepository` implementations.
+- Recorded the MVP decision that `InMemoryRoomRepository` should use one repository-level mutex, while `RoomRepository::Update()` should use a transactional copy-then-commit workflow.
+- Clarified that `RoomRepository::Remove()` must be synchronized with `Update()` and that `Room` should remain a mutex-free domain value object for the MVP.
 
 ## Latest Code History Summary
 
+- 2026-06-25: Documented the thread-safe repository and transactional `Update()` contract decision in agent guidance and architecture docs.
 - 2026-06-24: Clarified documentation scope: `buzzweb-server` is signaling-only and does not implement WebRTC media transport.
 - 2026-06-24: Finalized and documented initial room-control JSON envelopes and examples for future implementation.
 - 2026-06-24: Rewrote roadmap around repository/service contracts, typed results, participant lifecycle, signaling schemas, verification, and deployment steps.

@@ -2,6 +2,15 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-06-25 - Thread-Safe Room Repository Contract
+
+- Added `AGENTS.md` guidance that `RoomRepository` implementations must be thread-safe for all public methods.
+- Recorded the MVP choice to use one repository-level mutex in `InMemoryRoomRepository` instead of per-room mutexes.
+- Documented the `RoomRepository::Update()` transactional copy-then-commit workflow and the need for updater commit/abort status.
+- Clarified that `RoomRepository::Remove()` must be synchronized with `Update()` and that `Room` should remain a mutex-free domain value object for the MVP.
+- Updated `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/LAST_CHANGES.md` with the decision.
+- Verification: documentation inspection only.
+
 ## 2026-06-24 - Signaling-Only WebRTC Boundary
 
 - Updated `docs/INFO.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md` to clarify that `buzzweb-server` is a signaling-only server, not a WebRTC media server.

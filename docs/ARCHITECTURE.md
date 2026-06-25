@@ -135,18 +135,23 @@ Future storage options:
 
 ## Concurrency Considerations
 
-The sessions identified a future risk with copy-and-save repository workflows:
+The project should avoid unsafe load-copy-save room mutations:
 
 - User 1 loads a room copy.
 - User 2 loads the same room copy.
 - User 1 saves changes.
 - User 2 saves an older copy and overwrites User 1 changes.
 
-MVP options to avoid this:
+MVP decision:
 
-- Run room operations on one thread or one Asio strand.
-- Add locking inside `InMemoryRoomRepository`.
-- Add repository-level update methods.
+- `RoomRepository` implementations must make all public methods thread-safe.
+- `InMemoryRoomRepository` should start with one repository-level mutex, not one mutex per room.
+- `RoomRepository::Update()` should be a transactional copy-then-commit operation: lock repository state, find the stored room, copy it, run the updater on the copy, and replace stored state only when the updater reports success.
+- `RoomRepository::Remove()` must be synchronized with `Update()` so remove and update cannot race for the same room.
+- `Room` should remain a domain value object without an internal mutex for the MVP.
+- Updaters must not call back into the same repository while `Update()` is running.
+
+Per-room mutexes are a later optimization, not the MVP default. They require explicit lifetime and erase rules because `Remove()` can otherwise race with an in-progress per-room update.
 
 Later options:
 

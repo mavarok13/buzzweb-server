@@ -68,6 +68,13 @@ There is currently no `src/` directory, no executable target, and no method defi
 - Current `Room` stores participants in `std::vector<Participant>`, not `std::unordered_map`, because the MVP is expected to use small rooms.
 - Current `Participant` is intentionally minimal: identity and display name only.
 - Keep `RoomRepository` as a storage abstraction so in-memory, Redis, or PostgreSQL storage can be added later.
+- `RoomRepository` implementations must be thread-safe for all public methods, including `Add()`, `FindByCode()`, `Update()`, `Remove()`, `Exists()`, and `GetRoomCodes()`.
+- For the MVP `InMemoryRoomRepository`, prefer one repository-level mutex over per-room mutexes. Per-room locking can be considered later only if contention becomes real and remove/update lifetime rules are designed explicitly.
+- `RoomRepository::Update()` should use a transactional copy-then-commit workflow: lock repository state, find the stored room, copy it, run the updater on the copy, and replace stored state only when the updater reports success.
+- `RoomRepository::Remove()` must be synchronized with `Update()` so a room cannot be removed while an update is being evaluated or committed.
+- Future `Update()` contract changes should let the updater return commit/abort status instead of only mutating by side effect. If the updater aborts or fails validation, leave the stored room unchanged.
+- Do not put mutexes inside `Room` for the MVP. Keep `Room` a domain value object and keep synchronization in the repository implementation.
+- Updaters passed to `RoomRepository::Update()` must not call back into the same repository, because the repository may already hold its mutex.
 - Prefer small, direct changes that match the current declarations-first stage.
 
 ## JSON Protocol Guidance
