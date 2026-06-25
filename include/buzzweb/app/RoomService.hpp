@@ -22,7 +22,7 @@ public:
         std::optional<std::string> password
     );
     void LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id);
-    std::vector<domain::Participant> ListParticipants(const domain::RoomCode& code) const;
+    std::vector<domain::Participant> GetRoomParticipants(const domain::RoomCode& code) const;
 
 private:
     domain::RoomRepositoryPtr repository_;

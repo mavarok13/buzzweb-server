@@ -28,7 +28,7 @@ public:
     );
     ~Session();
 
-    const domain::ParticipantId& ParticipantId() const;
+    const domain::ParticipantId& GetParticipantId() const;
     void Start();
     void Send(std::string message);
     void Close();

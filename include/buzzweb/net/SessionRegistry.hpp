@@ -20,7 +20,7 @@ public:
     void Add(SessionPtr session);
     void Remove(const domain::ParticipantId& participant_id);
     std::optional<SessionPtr> Find(const domain::ParticipantId& participant_id) const;
-    std::vector<domain::ParticipantId> ParticipantIds() const;
+    std::vector<domain::ParticipantId> GetParticipantIds() const;
 
 private:
     std::unordered_map<domain::ParticipantId, SessionPtr> sessions_;
