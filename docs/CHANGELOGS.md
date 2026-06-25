@@ -2,6 +2,16 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-06-25 - Domain And App Implementations
+
+- Added `src/domain/` implementations for `Participant`, `Room`, and the new `InMemoryRoomRepository`.
+- Added `include/buzzweb/domain/InMemoryRoomRepository.hpp` as the first concrete room repository, with thread-safe public methods and transactional `Update()` commits.
+- Added `src/app/RoomService.cpp` for room creation, joining, leaving, and participant listing through `RoomRepository`.
+- Added `src/app/ControlDispatcher.cpp` for create/join/leave routing and structured `ControlResponse` results with `request_id`, `ok`, payload, and error data.
+- Converted `CMakeLists.txt` from an `INTERFACE` library to a compiled static library target.
+- Updated repository context docs and `AGENTS.md` to reflect the new source layout and remaining limitations.
+- Verification: `git diff --check` passed; `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug` is blocked because Boost package config is unavailable on this Windows host.
+
 ## 2026-06-25 - Thread-Safe Room Repository Contract
 
 - Added `AGENTS.md` guidance that `RoomRepository` implementations must be thread-safe for all public methods.

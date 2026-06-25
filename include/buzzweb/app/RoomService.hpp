@@ -15,11 +15,11 @@ public:
     explicit RoomService(domain::RoomRepositoryPtr repository);
     ~RoomService();
 
-    domain::Room CreateRoom(std::optional<std::string> password);
+    domain::Room CreateRoom(std::optional<std::string> password_hash);
     domain::Room JoinRoom(
         const domain::RoomCode& code,
         domain::Participant participant,
-        std::optional<std::string> password
+        std::optional<std::string> password_hash
     );
     void LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id);
     std::vector<domain::Participant> GetRoomParticipants(const domain::RoomCode& code) const;

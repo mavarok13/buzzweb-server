@@ -28,7 +28,7 @@ public:
 
     virtual RoomRepositoryResult Add(Room room) = 0;
     virtual std::optional<Room> FindByCode(const RoomCode& code) const = 0;
-    virtual RoomRepositoryResult Update(const RoomCode& code, std::function<void(Room&)> updater) = 0;
+    virtual RoomRepositoryResult Update(const RoomCode& code, std::function<RoomRepositoryResult(Room&)> updater) = 0;
     virtual RoomRepositoryResult Remove(const RoomCode& code) = 0;
     virtual bool Exists(const RoomCode& code) const = 0;
     virtual std::vector<RoomCode> GetRoomCodes() const = 0;

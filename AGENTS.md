@@ -43,16 +43,18 @@ If the index is missing, run `codebase-index index`. If it is stale, run `codeba
 
 ## Project Map
 
-- `CMakeLists.txt` defines the current declarations-only `buzzweb_server` `INTERFACE` library and `BuzzWeb::Server` alias.
+- `CMakeLists.txt` defines the compiled `buzzweb_server` static library and `BuzzWeb::Server` alias.
 - `Dockerfile` defines a Debian 12 build environment with CMake, Ninja, Boost, OpenSSL, and `nlohmann_json` packages.
-- `include/buzzweb/domain/` contains room-domain declarations: `Room`, `Participant`, and `RoomRepository`.
+- `include/buzzweb/domain/` contains room-domain declarations: `Room`, `Participant`, `RoomRepository`, and `InMemoryRoomRepository`.
 - `include/buzzweb/app/` contains application-layer declarations: `RoomService` and `ControlDispatcher`.
+- `src/domain/` contains implementations for domain value objects and `InMemoryRoomRepository`.
+- `src/app/` contains implementations for room use cases and control-message dispatch.
 - `include/buzzweb/net/` contains networking declarations: `Server`, `Listener`, `Session`, and `SessionRegistry`.
 - `session-ses_115d.md` contains planning context for WebRTC, WSS signaling, deployment, CMake, and domain/repository design.
 - `session-ses_114d.md` contains the initial development session that created the current skeleton and naming conventions.
 - `docs/` contains persistent project context for agents.
 
-There is currently no `src/` directory, no executable target, and no method definitions.
+There is currently no executable target and no networking method definitions. Domain and application layers have initial `.cpp` implementations under `src/`.
 
 ## Coding Guidelines
 
@@ -70,12 +72,12 @@ There is currently no `src/` directory, no executable target, and no method defi
 - Keep `RoomRepository` as a storage abstraction so in-memory, Redis, or PostgreSQL storage can be added later.
 - `RoomRepository` implementations must be thread-safe for all public methods, including `Add()`, `FindByCode()`, `Update()`, `Remove()`, `Exists()`, and `GetRoomCodes()`.
 - For the MVP `InMemoryRoomRepository`, prefer one repository-level mutex over per-room mutexes. Per-room locking can be considered later only if contention becomes real and remove/update lifetime rules are designed explicitly.
-- `RoomRepository::Update()` should use a transactional copy-then-commit workflow: lock repository state, find the stored room, copy it, run the updater on the copy, and replace stored state only when the updater reports success.
+- `RoomRepository::Update()` uses a transactional copy-then-commit workflow: lock repository state, find the stored room, copy it, run the updater on the copy, and replace stored state only when the updater reports success.
 - `RoomRepository::Remove()` must be synchronized with `Update()` so a room cannot be removed while an update is being evaluated or committed.
-- Future `Update()` contract changes should let the updater return commit/abort status instead of only mutating by side effect. If the updater aborts or fails validation, leave the stored room unchanged.
+- Updaters return commit/abort status. If the updater aborts or fails validation, leave the stored room unchanged.
 - Do not put mutexes inside `Room` for the MVP. Keep `Room` a domain value object and keep synchronization in the repository implementation.
 - Updaters passed to `RoomRepository::Update()` must not call back into the same repository, because the repository may already hold its mutex.
-- Prefer small, direct changes that match the current declarations-first stage.
+- Prefer small, direct changes that match the current early implementation stage.
 
 ## JSON Protocol Guidance
 

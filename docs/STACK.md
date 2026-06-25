@@ -6,11 +6,11 @@ Technical stack for `buzzweb-server`.
 
 - Language: C++20.
 - Build system: CMake, minimum version 3.24.
-- Current project target: `buzzweb_server` as an `INTERFACE` library.
+- Current project target: `buzzweb_server` as a compiled static library.
 - Current alias target: `BuzzWeb::Server`.
-- Current stage: declarations-only headers, with no compiled library or executable.
+- Current stage: domain and application layers have `.cpp` implementations; networking remains declarations-only and there is no executable.
 
-The project may later move from `INTERFACE` to a compiled library plus executable when `.cpp` implementations are added.
+The project still needs an executable target once runtime server wiring is added.
 
 ## C++ Dependencies
 
@@ -54,7 +54,7 @@ Likely future settings:
 ## Deployment
 
 - `Dockerfile` uses `debian:12-slim` and installs `build-essential`, `cmake`, `ninja-build`, Boost, OpenSSL, `nlohmann_json`, and `pkg-config`.
-- Current Docker build command runs CMake configure and build, but there are no compiled sources yet.
+- Current Docker build command runs CMake configure and build for the static library; there is still no executable target.
 - No `docker-compose.yml` exists yet.
 - A realistic deployment will likely need the signaling server container plus external `coturn`, and optionally a reverse proxy.
 

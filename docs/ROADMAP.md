@@ -4,22 +4,19 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-06-25: Added initial `src/` implementations for the domain and application layers, including thread-safe `InMemoryRoomRepository`, `RoomService`, `ControlDispatcher`, and a compiled static CMake library target.
 - 2026-06-25: Decided that `RoomRepository` implementations must be thread-safe, with MVP `InMemoryRoomRepository` using one repository-level mutex and `Update()` using a transactional copy-then-commit workflow.
 - 2026-06-24: Finalized the initial room-control JSON protocol shape for `create_room`, `join_room`, `leave_room`, `participant_joined`, `participant_left`, and generic request error responses. The canonical examples now live in `AGENTS.md`.
 - 2026-06-24: Clarified that `buzzweb-server` is a signaling-only server. WebRTC media transport belongs to clients and external infrastructure; this server only relays opaque offer/answer/ICE signaling payloads.
 
 ## Near Term
 
-- Add `src/` and provide implementations for the current domain and application declarations.
-- Default simple destructors in headers or define them in `.cpp` files to avoid linker errors.
-- Convert CMake from the current declarations-only `INTERFACE` target to a compiled library plus executable, or choose another explicit structure before adding `.cpp` files.
-- Add `InMemoryRoomRepository` as the first room storage implementation and source of truth for temporary rooms.
-- Update the `RoomRepository::Update()` declaration to let updaters return commit/abort status for the chosen transactional copy-then-commit workflow.
+- Add a minimal executable target that wires repository, service, dispatcher, and server configuration.
 - Keep `RoomService` as the only application layer that mutates rooms through `RoomRepository`.
 - Add typed application result types for room use cases, such as `CreateRoomResult`, `JoinRoomResult`, `LeaveRoomResult`, and `ListParticipantsResult`.
 - Replace string-based service errors with stable status enums, such as `RoomNotFound`, `WrongPassword`, `AlreadyJoined`, and `RoomFull`.
 - Define participant identity lifecycle: a session may have a `ParticipantId` before joining, while a `Participant` is created for a room during successful create/join flow.
-- Add a minimal `main.cpp` that wires repository, service, dispatcher, and server configuration after the compiled target structure is chosen.
+- Decide whether `LeaveRoom` should remove empty rooms inside a repository-level operation or through a repository API that can erase safely after update.
 
 ## MVP Signaling
 

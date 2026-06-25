@@ -2,14 +2,16 @@
 
 Updated: 2026-06-25
 
-## Current Documentation Update
+## Current Implementation Update
 
-- Added agent guidance for thread-safe `RoomRepository` implementations.
-- Recorded the MVP decision that `InMemoryRoomRepository` should use one repository-level mutex, while `RoomRepository::Update()` should use a transactional copy-then-commit workflow.
-- Clarified that `RoomRepository::Remove()` must be synchronized with `Update()` and that `Room` should remain a mutex-free domain value object for the MVP.
+- Added initial `.cpp` implementations for `Participant`, `Room`, `RoomService`, and `ControlDispatcher`.
+- Added `domain::InMemoryRoomRepository` with one repository-level mutex and transactional copy-then-commit `Update()` behavior.
+- Converted `buzzweb_server` from an `INTERFACE` target to a compiled static library target.
+- Local CMake configure is still blocked on this Windows host because Boost package config is unavailable.
 
 ## Latest Code History Summary
 
+- 2026-06-25: Added initial domain/app source implementations and static library CMake wiring.
 - 2026-06-25: Documented the thread-safe repository and transactional `Update()` contract decision in agent guidance and architecture docs.
 - 2026-06-24: Clarified documentation scope: `buzzweb-server` is signaling-only and does not implement WebRTC media transport.
 - 2026-06-24: Finalized and documented initial room-control JSON envelopes and examples for future implementation.

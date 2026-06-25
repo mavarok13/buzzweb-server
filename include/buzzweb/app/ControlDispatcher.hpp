@@ -6,18 +6,35 @@
 
 #include <functional>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 
 namespace buzzweb::app {
 
+enum ControlMessageType {
+    CreateRoom,
+    JoinRoom,
+    LeaveRoom,
+    GetRoomParticipants
+};
+
 struct ControlMessage {
-    std::string type;
+    ControlMessageType type;
+    std::optional<std::string> request_id;
     nlohmann::json payload;
 };
 
+struct ControlError {
+    std::string code;
+    std::string message;
+};
+
 struct ControlResponse {
-    std::string type;
+    ControlMessageType type;
+    std::optional<std::string> request_id;
+    bool ok;
     nlohmann::json payload;
+    std::optional<ControlError> error;
 };
 
 using ControlSendHandler = std::function<void(const ControlResponse& response)>;

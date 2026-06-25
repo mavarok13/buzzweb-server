@@ -4,11 +4,11 @@
 
 ## Current Project State
 
-- The repository is currently a declarations-only skeleton.
+- The repository now has initial domain and application implementations under `src/`.
 - There are public headers under `include/buzzweb/` for domain, application, and network layers.
-- There are no `.cpp` implementations, no `src/` directory, no executable target, and no tests yet.
-- CMake currently defines an `INTERFACE` library target named `buzzweb_server` and alias `BuzzWeb::Server`.
-- Dockerfile exists as a dependency-contained build environment, but the current project has no compiled sources.
+- There is no executable target, no networking runtime implementation, and no tests yet.
+- CMake currently defines a compiled static library target named `buzzweb_server` and alias `BuzzWeb::Server`.
+- Dockerfile exists as a dependency-contained build environment for configuring and building the library.
 
 ## Intended MVP Features
 
@@ -25,8 +25,9 @@
 - `domain::Participant`: participant identity and display name.
 - `domain::Room`: room code, optional password hash, and vector of participants.
 - `domain::RoomRepository`: storage abstraction for rooms.
-- `app::RoomService`: intended use-case layer for creating, joining, leaving, and listing room participants.
-- `app::ControlDispatcher`: intended JSON control-message router between network sessions and `RoomService`.
+- `domain::InMemoryRoomRepository`: thread-safe in-memory room storage using one repository-level mutex and transactional update copies.
+- `app::RoomService`: implemented use-case layer for creating, joining, leaving, and listing room participants.
+- `app::ControlDispatcher`: implemented control-message router for create, join, and leave room messages using the current application structs.
 - `net::Server`: intended top-level WSS server owner.
 - `net::Listener`: intended TCP/TLS accept loop owner.
 - `net::Session`: intended per-WebSocket connection owner.
@@ -34,10 +35,9 @@
 
 ## Current Limitations
 
-- No methods are implemented.
 - No executable starts the server.
 - No HTTP/WebSocket runtime behavior exists yet.
-- Initial room-control JSON envelopes and examples are finalized in `AGENTS.md`, but no protocol runtime behavior is implemented yet.
+- Initial room-control JSON envelopes and examples are finalized in `AGENTS.md`; dispatcher-level routing exists, but no network parser/serializer is implemented yet.
 - No WebRTC media stack is implemented or planned inside this server; SDP and ICE data should be relayed, not parsed as media.
 - No authentication, authorization, TURN integration, persistence, or room cleanup exists yet.
 - No automated tests are configured.

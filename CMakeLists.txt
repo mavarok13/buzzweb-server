@@ -15,21 +15,29 @@ find_package(Boost REQUIRED CONFIG COMPONENTS system log log_setup thread)
 find_package(OpenSSL REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
-add_library(buzzweb_server INTERFACE)
+add_library(
+    buzzweb_server
+    STATIC
+        src/app/ControlDispatcher.cpp
+        src/app/RoomService.cpp
+        src/domain/InMemoryRoomRepository.cpp
+        src/domain/Participant.cpp
+        src/domain/Room.cpp
+)
 add_library(BuzzWeb::Server ALIAS buzzweb_server)
 
-target_compile_features(buzzweb_server INTERFACE cxx_std_20)
+target_compile_features(buzzweb_server PUBLIC cxx_std_20)
 
 target_include_directories(
     buzzweb_server
-    INTERFACE
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
 target_link_libraries(
     buzzweb_server
-    INTERFACE
+    PUBLIC
         Boost::system
         Boost::log
         Boost::log_setup

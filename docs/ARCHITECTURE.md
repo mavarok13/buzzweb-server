@@ -4,13 +4,14 @@
 
 ## Current State
 
-The repository currently contains only declarations:
+The repository currently contains initial domain and application implementations:
 
 - Public headers live under `include/buzzweb/`.
-- There are no method definitions.
-- There is no `src/` directory.
+- Domain and application method definitions live under `src/domain/` and `src/app/`.
+- `InMemoryRoomRepository` is available as the first concrete room repository.
 - There is no executable target.
-- The CMake target is an `INTERFACE` target that carries include paths, C++20 requirements, and dependency links.
+- The CMake target is a compiled static library that carries include paths, C++20 requirements, and dependency links.
+- Network-layer method definitions are not implemented yet.
 
 ## Intended Layering
 
@@ -21,6 +22,7 @@ Files: `include/buzzweb/domain/`
 - `Participant` represents a user inside a room.
 - `Room` owns room identity/rules and room participants.
 - `RoomRepository` abstracts room storage.
+- `InMemoryRoomRepository` stores rooms in memory behind one repository-level mutex.
 
 Domain rules:
 
@@ -40,7 +42,7 @@ Application rules:
 
 - `RoomService` should be the only layer that mutates rooms through `RoomRepository`.
 - Network classes should call `ControlDispatcher` or `RoomService`, not mutate `Room` directly.
-- If repository methods return room copies, `RoomService` must save after every mutation.
+- `RoomService` mutates rooms through `RoomRepository::Update()` so joins/leaves use repository-level transactional updates.
 - If repository methods later expose mutable access, pointers/references must not be stored long-term in sessions.
 
 ### Network
@@ -67,7 +69,7 @@ Network rules:
 4. Session receives JSON control messages.
 5. ControlDispatcher parses/routes messages by type.
 6. RoomService performs room use cases and persists state through RoomRepository.
-7. ControlDispatcher returns responses or relay events.
+7. ControlDispatcher returns structured responses for create, join, and leave room requests.
 8. Session sends JSON responses/events to clients.
 9. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
 
@@ -118,13 +120,13 @@ Out of scope for this server:
 
 ## Storage Model
 
-Current storage is only an interface. No implementation exists yet.
+Current storage has an interface and one in-memory implementation.
 
-Planned MVP storage:
+MVP storage:
 
 - `InMemoryRoomRepository` as the source of truth for temporary call rooms.
 - Rooms disappear on process restart.
-- Repository storage may use `std::unordered_map<RoomCode, Room>`.
+- Repository storage uses `std::unordered_map<RoomCode, Room>`.
 - Room participants can remain a `std::vector<Participant>`.
 
 Future storage options:
@@ -162,7 +164,7 @@ Later options:
 ## Important Constraints
 
 - The current code intentionally has declarations without definitions.
-- Adding `.cpp` implementations will require converting CMake from pure `INTERFACE` usage to a compiled target or adding an executable that compiles implementation files.
+- Adding networking/runtime implementations will require source files for the network layer and an executable target that wires repository, services, dispatcher, and server configuration.
 - Keep media handling out of this server until there is an explicit feature decision to build an SFU or media relay.
 - For 1-to-1 calls, peer-to-peer WebRTC is enough for the intended MVP.
 - For group calls, plan for an SFU later rather than trying to relay media over WebSocket.
