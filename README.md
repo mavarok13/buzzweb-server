@@ -23,3 +23,4 @@ Media is planned to be transmitted directly between clients using WebRTC.
 ## TO DO
 - make enum of message, result and error types for requests and responses
 - move `ErrorMessage` in `ControlDispatcher.cpp` strings to another file
+- refactor repository

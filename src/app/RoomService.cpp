@@ -19,20 +19,10 @@ domain::RoomCode GenerateRoomCode()
     return stream.str();
 }
 
-domain::RoomRepositoryResult Success(const domain::RoomCode& code)
+void ThrowIfFailed(const std::optional<std::string>& error)
 {
-    return {domain::RoomRepositoryResult::Type::Success, {}, code};
-}
-
-domain::RoomRepositoryResult Failed(std::string message, const domain::RoomCode& code)
-{
-    return {domain::RoomRepositoryResult::Type::Failed, std::move(message), code};
-}
-
-void ThrowIfFailed(const domain::RoomRepositoryResult& result)
-{
-    if (result.type == domain::RoomRepositoryResult::Type::Failed) {
-        throw std::runtime_error(result.message.empty() ? "repository_error" : result.message);
+    if (error.has_value()) {
+        throw std::runtime_error(error.value());
     }
 }
 
@@ -60,7 +50,7 @@ domain::Room RoomService::CreateRoom(std::optional<std::string> password)
         }
 
         if (result.message != "room_already_exists") {
-            ThrowIfFailed(result);
+            ThrowIfFailed(result.message);
         }
     }
 
@@ -74,25 +64,31 @@ domain::Room RoomService::JoinRoom(
 )
 {
     std::optional<domain::Room> joined_room;
+    std::optional<std::string> service_error;
 
-    auto result = repository_->Update(
+    auto repository_result = repository_->Update(
         code,
-        [participant = std::move(participant), password_hash = std::move(password_hash), &joined_room](domain::Room& room) {
+        [participant = std::move(participant), password_hash = std::move(password_hash), &joined_room, &service_error](domain::Room& room) {
             if (room.IsPasswordProtected() && room.GetPasswordHash() != password_hash) {
-                return Failed("wrong_password", room.GetCode());
+                service_error = "wrong_password";
+                return domain::RoomRepositoryDecision::Abort;
             }
 
             if (room.HasParticipant(participant.GetId())) {
-                return Failed("already_joined", room.GetCode());
+                service_error = "already_joined";
+                return domain::RoomRepositoryDecision::Abort;
             }
 
             room.AddParticipant(participant);
             joined_room = room;
-            return Success(room.GetCode());
+            return domain::RoomRepositoryDecision::Commit;
         }
     );
 
-    ThrowIfFailed(result);
+    ThrowIfFailed(service_error);
+    if (repository_result .type == domain::RoomRepositoryResult::Type::Failed) {
+        ThrowIfFailed(repository_result.message);
+    }
     if (!joined_room.has_value()) {
         throw std::runtime_error("internal_error");
     }
@@ -102,19 +98,24 @@ domain::Room RoomService::JoinRoom(
 
 void RoomService::LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id)
 {
-    auto result = repository_->Update(
+    std::optional<std::string> service_error;
+    auto repository_result = repository_->Update(
         code,
-        [&participant_id](domain::Room& room) {
+        [&participant_id, &service_error](domain::Room& room) {
             if (!room.HasParticipant(participant_id)) {
-                return Failed("not_in_room", room.GetCode());
+                service_error = "participant_not_found";
+                return domain::RoomRepositoryDecision::Abort;
             }
 
             room.RemoveParticipant(participant_id);
-            return Success(room.GetCode());
+            return domain::RoomRepositoryDecision::Commit;
         }
     );
 
-    ThrowIfFailed(result);
+    ThrowIfFailed(service_error);
+    if (repository_result .type == domain::RoomRepositoryResult::Type::Failed) {
+        ThrowIfFailed(repository_result.message);
+    }
 }
 
 std::vector<domain::Participant> RoomService::GetRoomParticipants(const domain::RoomCode& code) const

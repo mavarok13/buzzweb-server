@@ -14,7 +14,7 @@ public:
 
     RoomRepositoryResult Add(Room room) override;
     std::optional<Room> FindByCode(const RoomCode& code) const override;
-    RoomRepositoryResult Update(const RoomCode& code, std::function<RoomRepositoryResult(Room&)> updater) override;
+    RoomRepositoryResult Update(const RoomCode& code, std::function<RoomRepositoryDecision(Room&)> updater) override;
     RoomRepositoryResult Remove(const RoomCode& code) override;
     bool Exists(const RoomCode& code) const override;
     std::vector<RoomCode> GetRoomCodes() const override;
