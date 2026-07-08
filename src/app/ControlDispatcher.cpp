@@ -102,10 +102,36 @@ ControlResponse ErrorResponse(ControlMessageType type, std::optional<std::string
     };
 }
 
+std::string SerializeControlEventData(const ControlEventData& event_data) {
+    std::string type;
+
+    switch (event_data.type) {
+        case ControlMessageType::JoinEvent:
+            type = "participant_joined";
+            break;
+        case ControlMessageType::LeftEvent:
+            type = "participant_left";
+            break;
+        default:
+            type = "unknown_event";
+    }
+
+    nlohmann::json json = {
+        {"type", type},
+        {"payload", {
+            {"room_code", event_data.room_code},
+            {"participant_id", event_data.participant_id},
+            {"participants", nlohmann::json::array()}
+        }}
+    };
+
+    return json.dump();
+}
+
 } // namespace
 
-ControlDispatcher::ControlDispatcher(RoomService& room_service)
-    : room_service_(room_service)
+ControlDispatcher::ControlDispatcher(RoomService& room_service, ControlEventHandler event_handler)
+    : room_service_(room_service), event_handler_(std::move(event_handler))
 {
 }
 
@@ -164,6 +190,8 @@ void ControlDispatcher::Dispatch(
                     {"participants", ParticipantsToJson(room.GetParticipants())}
                 }
             ));
+            event_handler_(room_code, participant.GetId(), SerializeControlEventData({ControlMessageType::JoinEvent, room.GetCode(), participant.GetId()}));
+            
             return;
         }
 
@@ -172,6 +200,7 @@ void ControlDispatcher::Dispatch(
             room_service_.LeaveRoom(room_code, participant_id);
 
             send(SuccessResponse(response_type, message.request_id, {{"room_code", room_code}}));
+            event_handler_(room_code, participant_id, SerializeControlEventData({ControlMessageType::LeftEvent, room_code, participant_id}));
             return;
         }
 

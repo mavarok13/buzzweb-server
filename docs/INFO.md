@@ -6,10 +6,10 @@
 
 - The repository now has initial domain, application, and minimal WSS networking implementations under `src/`.
 - There are public headers under `include/buzzweb/` for domain, application, and network layers.
-- There is no executable target and no tests yet.
-- The networking layer can own an IO context/TLS context, accept TCP connections, perform TLS and WebSocket handshakes, parse text JSON control envelopes, dispatch to `ControlDispatcher`, and write JSON responses.
-- CMake currently defines a compiled static library target named `buzzweb_server` and alias `BuzzWeb::Server`.
-- Dockerfile exists as a dependency-contained build environment for configuring and building the library.
+- There is an executable target for running the WSS server with environment-based TLS/port configuration; there are no tests yet.
+- The networking layer can own an IO context/TLS context, accept TCP connections, perform TLS and WebSocket handshakes, parse text JSON control envelopes, dispatch to `ControlDispatcher`, write JSON responses, and send initial room participant events through `SessionRegistry`.
+- CMake currently defines a compiled static library target named `buzzweb_server_lib`, alias `BuzzWeb::Server`, and executable target `buzzweb_server`.
+- Dockerfile exists as a dependency-contained build environment for configuring and building the executable image.
 
 ## Intended MVP Features
 
@@ -28,7 +28,7 @@
 - `domain::RoomRepository`: storage abstraction for rooms.
 - `domain::InMemoryRoomRepository`: thread-safe in-memory room storage using one repository-level mutex and transactional update copies.
 - `app::RoomService`: implemented use-case layer for creating, joining, leaving, and listing room participants.
-- `app::ControlDispatcher`: implemented control-message router for create, join, and leave room messages using the current application structs.
+- `app::ControlDispatcher`: implemented control-message router for create, join, and leave room messages using the current application structs, plus an event handler callback for participant events.
 - `net::Server`: top-level WSS server owner for IO context, TLS context, listener, and session registry.
 - `net::Listener`: TCP accept loop that creates sessions.
 - `net::Session`: per-connection TLS/WebSocket owner that reads text frames, dispatches JSON control messages, and writes JSON responses.
@@ -36,9 +36,9 @@
 
 ## Current Limitations
 
-- No executable starts the server.
+- The executable starts the WSS server using `BUZZWEB_CERTIFICATE_FILE_PATH`, `BUZZWEB_PRIVATE_KEY_PATH`, and optional `BUZZWEB_SERVER_PORT`.
 - Initial room-control JSON envelopes and examples are finalized in `AGENTS.md`; dispatcher-level routing and network parser/serializer implementations exist for direct create/join/leave responses.
-- Broadcast room events are not implemented yet.
+- Initial `participant_joined` and `participant_left` event delivery exists, but event payloads are still minimal and should be refined to match the finalized protocol examples exactly.
 - No WebRTC media stack is implemented or planned inside this server; SDP and ICE data should be relayed, not parsed as media.
 - No authentication, authorization, TURN integration, persistence, or room cleanup exists yet.
 - No automated tests are configured.

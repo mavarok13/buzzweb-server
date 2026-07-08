@@ -4,6 +4,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-07-08: Added executable/runtime wiring with environment-based WSS config and initial participant-event delivery through a dispatcher callback and session registry.
 - 2026-06-26: Added minimal Boost.Asio/Beast WSS networking implementations for `Server`, `Listener`, `Session`, and `SessionRegistry`, wired into the static library.
 - 2026-06-25: Added initial `src/` implementations for the domain and application layers, including thread-safe `InMemoryRoomRepository`, `RoomService`, `ControlDispatcher`, and a compiled static CMake library target.
 - 2026-06-25: Decided that `RoomRepository` implementations must be thread-safe, with MVP `InMemoryRoomRepository` using one repository-level mutex and `Update()` using a transactional copy-then-commit workflow.
@@ -12,7 +13,6 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Near Term
 
-- Add a minimal executable target that wires repository, service, dispatcher, and server configuration.
 - Keep `RoomService` as the only application layer that mutates rooms through `RoomRepository`.
 - Add typed application result types for room use cases, such as `CreateRoomResult`, `JoinRoomResult`, `LeaveRoomResult`, and `ListParticipantsResult`.
 - Replace string-based service errors with stable status enums, such as `RoomNotFound`, `WrongPassword`, `AlreadyJoined`, and `RoomFull`.
@@ -24,13 +24,13 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Implement the finalized initial JSON protocol schemas for `create_room`, `join_room`, and `leave_room`.
 - Implement `ControlDispatcher` as the JSON routing layer that parses payloads, creates `Participant` values when needed, and calls `RoomService`.
 - Map typed `RoomService` results to stable JSON response and error codes.
-- Add a runnable executable/config layer around the existing library-level WSS server.
+- Refine the runnable executable/config layer around the existing library-level WSS server.
 - Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WSS.
 - Remove rooms when they become empty.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.
 - Implement offer/answer/ICE relay between participants without parsing, validating, or terminating WebRTC media.
-- Add `participant_joined` and `participant_left` events.
+- Refine `participant_joined` and `participant_left` event payloads to match the finalized protocol examples exactly.
 - Add basic logging for server lifecycle, sessions, room operations, and protocol errors.
 
 ## Verification And Quality

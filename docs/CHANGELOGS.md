@@ -2,6 +2,14 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-07-08 - Runtime Event Wiring Build Fixes
+
+- Added/finalized runtime wiring for the executable to own `SessionRegistry`, pass it into `net::Server`, and provide a `ControlDispatcher` event handler that sends room participant events to connected sessions.
+- Fixed participant-event JSON construction by using `nlohmann::json::array()` for the event payload participants placeholder.
+- Included `buzzweb/net/Session.hpp` in `src/main.cpp` so the runtime event handler can call `Session::Send()` on sessions returned from `SessionRegistry`.
+- Updated project context docs to reflect the executable target, environment-based WSS configuration, and initial participant-event delivery.
+- Verification: `docker build -t buzzweb-server .` completed successfully.
+
 ## 2026-07-08 - Dev Docker Helper Scripts
 
 - Added `scripts/generate-dev-certs.sh` to create local self-signed development TLS files under ignored `certs/`.

@@ -15,7 +15,9 @@ enum ControlMessageType {
     CreateRoom,
     JoinRoom,
     LeaveRoom,
-    GetRoomParticipants
+    GetRoomParticipants,
+    JoinEvent,
+    LeftEvent
 };
 
 struct ControlMessage {
@@ -37,11 +39,19 @@ struct ControlResponse {
     std::optional<ControlError> error;
 };
 
+struct ControlEventData {
+public:
+    ControlMessageType type;
+    domain::RoomCode room_code;
+    domain::ParticipantId participant_id;
+};
+
 using ControlSendHandler = std::function<void(const ControlResponse& response)>;
+using ControlEventHandler = std::function<void(domain::RoomCode room_code, domain::ParticipantId participant_id, const std::string& event_message)>;
 
 class ControlDispatcher {
 public:
-    explicit ControlDispatcher(RoomService& room_service);
+    explicit ControlDispatcher(RoomService& room_service, ControlEventHandler event_handler);
     ~ControlDispatcher();
 
     void Dispatch(
@@ -52,6 +62,7 @@ public:
 
 private:
     RoomService& room_service_;
+    ControlEventHandler event_handler_;
 };
 
 } // namespace buzzweb::app

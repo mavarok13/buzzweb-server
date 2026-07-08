@@ -9,9 +9,9 @@ The repository currently contains initial domain, application, and minimal WSS n
 - Public headers live under `include/buzzweb/`.
 - Domain and application method definitions live under `src/domain/` and `src/app/`.
 - `InMemoryRoomRepository` is available as the first concrete room repository.
-- There is no executable target.
-- The CMake target is a compiled static library that carries include paths, C++20 requirements, and dependency links.
-- Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, and session registry storage.
+- There is an executable target that wires the in-memory repository, room service, dispatcher, session registry, environment config, and WSS server.
+- The CMake configuration builds a compiled static library plus the `buzzweb_server` executable.
+- Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, session registry storage, and initial participant-event delivery.
 
 ## Intended Layering
 
@@ -36,7 +36,7 @@ Domain rules:
 Files: `include/buzzweb/app/`
 
 - `RoomService` is the intended use-case layer for `CreateRoom`, `JoinRoom`, `LeaveRoom`, and `ListParticipants`.
-- `ControlDispatcher` is the intended bridge between JSON control messages and application services.
+- `ControlDispatcher` is the intended bridge between JSON control messages and application services, and emits participant-event messages through a callback supplied by runtime wiring.
 
 Application rules:
 
@@ -49,7 +49,7 @@ Application rules:
 
 Files: `include/buzzweb/net/`
 
-- `Server` owns IO context, TLS context, listener, session registry, dispatcher reference, and basic logging setup.
+- `Server` owns IO context, TLS context, listener, dispatcher reference, and basic logging setup; the executable now owns `SessionRegistry` and passes it into the server/runtime event bridge.
 - `Listener` accepts TCP connections and creates sessions.
 - `Session` owns one TLS WebSocket connection, performs TLS and WebSocket handshakes, reads text frames, maps JSON envelopes to control messages, dispatches them, and writes JSON responses.
 - `SessionRegistry` tracks active sessions by participant ID behind a mutex.
@@ -71,9 +71,10 @@ Network rules:
 6. RoomService performs room use cases and persists state through RoomRepository.
 7. ControlDispatcher returns structured responses for create, join, and leave room requests.
 8. Session sends JSON responses to clients.
-9. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
+9. ControlDispatcher emits participant events through a callback; runtime wiring resolves room participants to sessions through `SessionRegistry` and sends event JSON to connected recipients.
+10. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
 
-Room broadcasts and WebRTC offer/answer/ICE relay events are still future work.
+Initial participant events exist. WebRTC offer/answer/ICE relay events are still future work.
 
 ## Intended Signaling Messages
 
@@ -165,8 +166,8 @@ Later options:
 
 ## Important Constraints
 
-- The current code has library-level implementations but still no executable entry point.
-- Adding a runnable server still requires an executable target that wires repository, services, dispatcher, TLS certificate/key paths, and server configuration.
+- The current code has a runnable executable entry point wired to environment variables for TLS certificate path, private key path, and port.
+- Event payloads and runtime ownership should continue to be refined as room cleanup, typed results, and WebRTC relay are added.
 - Keep media handling out of this server until there is an explicit feature decision to build an SFU or media relay.
 - For 1-to-1 calls, peer-to-peer WebRTC is enough for the intended MVP.
 - For group calls, plan for an SFU later rather than trying to relay media over WebSocket.

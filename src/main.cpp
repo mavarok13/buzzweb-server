@@ -6,6 +6,7 @@
 #include "buzzweb/app/RoomService.hpp"
 #include "buzzweb/app/ControlDispatcher.hpp"
 #include "buzzweb/net/Server.hpp"
+#include "buzzweb/net/Session.hpp"
 #include "util/Config.hpp"
 
 int main () {
@@ -24,8 +25,21 @@ int main () {
 
     auto repository = std::make_shared<buzzweb::domain::InMemoryRoomRepository>();
     buzzweb::app::RoomService room_service(repository);
-    buzzweb::app::ControlDispatcher dispatcher(room_service);
-    buzzweb::net::Server server(config, dispatcher);
+    buzzweb::net::SessionRegistry registry;
+    buzzweb::app::ControlDispatcher dispatcher(room_service, [&room_service, &registry] (buzzweb::domain::RoomCode room_code, buzzweb::domain::ParticipantId participant_id, const std::string & event_message) {
+        const auto participants = room_service.GetRoomParticipants(room_code);
+        for (const auto participant : participants) {
+            if (participant.GetId() == participant_id) {
+                continue;
+            }
+
+            auto session_ptr = registry.Find(participant.GetId());
+            if (session_ptr) {
+                (*session_ptr)->Send(event_message);
+            }
+        }
+    });
+    buzzweb::net::Server server(config, registry, dispatcher);
     server.Run();
 
     return 0;

@@ -10,10 +10,11 @@
 
 namespace buzzweb::net {
 
-Server::Server(ServerConfig config, app::ControlDispatcher& dispatcher)
+Server::Server(ServerConfig config, net::SessionRegistry& registry, app::ControlDispatcher& dispatcher)
     : config_(std::move(config)),
       io_context_(1),
       tls_context_(boost::asio::ssl::context::tlsv12_server),
+      registry_(registry),
       dispatcher_(dispatcher)
 {
     ConfigureLogging();

@@ -4,13 +4,16 @@ Updated: 2026-07-08
 
 ## Current Implementation Update
 
+- Added executable/runtime wiring for environment-based WSS configuration, external `SessionRegistry` ownership, and initial participant-event delivery.
+- Fixed compile issues in participant-event JSON construction and runtime session sends.
 - Added dev helper scripts under `scripts/` for generating local certs, building the Docker image, and running the Docker container with mounted certs.
 - Fixed Docker build compilation for SSL WebSocket sessions by including Boost.Beast's SSL websocket support header in `Session.hpp`.
 - Docker image build now completes successfully with `docker build -t buzzweb-server .`.
-- Executable/config wiring exists, but broadcasts, empty-room cleanup, and WebRTC offer/answer/ICE relay are still not implemented.
+- Empty-room cleanup, fully protocol-complete event payloads, and WebRTC offer/answer/ICE relay are still not implemented.
 
 ## Latest Code History Summary
 
+- 2026-07-08: Added executable/runtime event wiring and verified Docker build after compile fixes.
 - 2026-07-08: Added dev Docker/certificate helper scripts.
 - 2026-07-08: Fixed Boost.Beast SSL websocket build failure and verified Docker image build.
 - 2026-06-26: Added minimal Boost.Asio/Beast WSS networking implementation and CMake wiring.
