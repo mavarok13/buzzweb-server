@@ -6,7 +6,11 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/websocket/ssl.hpp>
 #include <boost/beast/websocket/stream.hpp>
+#include <boost/system/error_code.hpp>
+#include <cstddef>
+#include <deque>
 #include <memory>
 #include <string>
 
@@ -34,16 +38,23 @@ public:
     void Close();
 
 private:
-    void OnTlsHandshake();
-    void OnWebSocketAccept();
+    void OnTlsHandshake(boost::system::error_code error);
+    void OnWebSocketAccept(boost::system::error_code error);
     void ReadNext();
+    void OnRead(boost::system::error_code error, std::size_t bytes_transferred);
     void HandleMessage(std::string message);
+    void DoWrite();
+    void RemoveFromRegistry();
+    void Fail(boost::system::error_code error);
 
     WebSocketStream websocket_;
     boost::beast::flat_buffer buffer_;
+    std::deque<std::string> write_queue_;
     app::ControlDispatcher& dispatcher_;
     SessionRegistry& registry_;
     domain::ParticipantId participant_id_;
+    bool registered_ = false;
+    bool closing_ = false;
 };
 
 using SessionPtr = std::shared_ptr<Session>;

@@ -4,6 +4,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-06-26: Added minimal Boost.Asio/Beast WSS networking implementations for `Server`, `Listener`, `Session`, and `SessionRegistry`, wired into the static library.
 - 2026-06-25: Added initial `src/` implementations for the domain and application layers, including thread-safe `InMemoryRoomRepository`, `RoomService`, `ControlDispatcher`, and a compiled static CMake library target.
 - 2026-06-25: Decided that `RoomRepository` implementations must be thread-safe, with MVP `InMemoryRoomRepository` using one repository-level mutex and `Update()` using a transactional copy-then-commit workflow.
 - 2026-06-24: Finalized the initial room-control JSON protocol shape for `create_room`, `join_room`, `leave_room`, `participant_joined`, `participant_left`, and generic request error responses. The canonical examples now live in `AGENTS.md`.
@@ -23,8 +24,8 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Implement the finalized initial JSON protocol schemas for `create_room`, `join_room`, and `leave_room`.
 - Implement `ControlDispatcher` as the JSON routing layer that parses payloads, creates `Participant` values when needed, and calls `RoomService`.
 - Map typed `RoomService` results to stable JSON response and error codes.
-- Implement WebSocket/WSS accept and read/write loops.
-- Implement `create_room`, `join_room`, and `leave_room` control flow.
+- Add a runnable executable/config layer around the existing library-level WSS server.
+- Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WSS.
 - Remove rooms when they become empty.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.

@@ -8,7 +8,7 @@ Technical stack for `buzzweb-server`.
 - Build system: CMake, minimum version 3.24.
 - Current project target: `buzzweb_server` as a compiled static library.
 - Current alias target: `BuzzWeb::Server`.
-- Current stage: domain and application layers have `.cpp` implementations; networking remains declarations-only and there is no executable.
+- Current stage: domain, application, and minimal WSS networking layers have `.cpp` implementations; there is no executable.
 
 The project still needs an executable target once runtime server wiring is added.
 
@@ -38,7 +38,9 @@ Planned or possible later dependencies:
 
 ## Runtime Configuration
 
-No runtime configuration is implemented yet.
+No runtime configuration CLI or environment loader is implemented yet.
+
+The library-level `net::ServerConfig` currently carries only the listen port, TLS certificate file, and TLS private-key file.
 
 Likely future settings:
 

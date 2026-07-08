@@ -44,6 +44,9 @@ build/
 Build/
 build-*/
 
+# Build files
+build.log
+
 # CMake generated files
 CMakeFiles/
 CMakeCache.txt
@@ -67,3 +70,6 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Security
+certs/

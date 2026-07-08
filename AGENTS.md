@@ -50,11 +50,12 @@ If the index is missing, run `codebase-index index`. If it is stale, run `codeba
 - `src/domain/` contains implementations for domain value objects and `InMemoryRoomRepository`.
 - `src/app/` contains implementations for room use cases and control-message dispatch.
 - `include/buzzweb/net/` contains networking declarations: `Server`, `Listener`, `Session`, and `SessionRegistry`.
+- `src/net/` contains the minimal Boost.Asio/Beast WSS server, listener, session, and session-registry implementations.
 - `session-ses_115d.md` contains planning context for WebRTC, WSS signaling, deployment, CMake, and domain/repository design.
 - `session-ses_114d.md` contains the initial development session that created the current skeleton and naming conventions.
 - `docs/` contains persistent project context for agents.
 
-There is currently no executable target and no networking method definitions. Domain and application layers have initial `.cpp` implementations under `src/`.
+There is currently no executable target. Domain, application, and minimal WSS networking layers have `.cpp` implementations under `src/`.
 
 ## Coding Guidelines
 

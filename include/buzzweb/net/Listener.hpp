@@ -6,6 +6,7 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/context.hpp>
+#include <boost/system/error_code.hpp>
 
 namespace buzzweb::net {
 
@@ -25,6 +26,7 @@ public:
 
 private:
     void AcceptNext();
+    void OnAccept(boost::system::error_code error, boost::asio::ip::tcp::socket socket);
 
     boost::asio::io_context& io_context_;
     boost::asio::ssl::context& tls_context_;

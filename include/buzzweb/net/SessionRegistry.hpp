@@ -3,6 +3,7 @@
 #include "buzzweb/domain/Participant.hpp"
 
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,7 @@ public:
     std::vector<domain::ParticipantId> GetParticipantIds() const;
 
 private:
+    mutable std::mutex mutex_;
     std::unordered_map<domain::ParticipantId, SessionPtr> sessions_;
 };
 

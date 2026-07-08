@@ -1,16 +1,19 @@
 # Last Changes
 
-Updated: 2026-06-25
+Updated: 2026-07-08
 
 ## Current Implementation Update
 
-- Added initial `.cpp` implementations for `Participant`, `Room`, `RoomService`, and `ControlDispatcher`.
-- Added `domain::InMemoryRoomRepository` with one repository-level mutex and transactional copy-then-commit `Update()` behavior.
-- Converted `buzzweb_server` from an `INTERFACE` target to a compiled static library target.
-- Local CMake configure is still blocked on this Windows host because Boost package config is unavailable.
+- Added dev helper scripts under `scripts/` for generating local certs, building the Docker image, and running the Docker container with mounted certs.
+- Fixed Docker build compilation for SSL WebSocket sessions by including Boost.Beast's SSL websocket support header in `Session.hpp`.
+- Docker image build now completes successfully with `docker build -t buzzweb-server .`.
+- Executable/config wiring exists, but broadcasts, empty-room cleanup, and WebRTC offer/answer/ICE relay are still not implemented.
 
 ## Latest Code History Summary
 
+- 2026-07-08: Added dev Docker/certificate helper scripts.
+- 2026-07-08: Fixed Boost.Beast SSL websocket build failure and verified Docker image build.
+- 2026-06-26: Added minimal Boost.Asio/Beast WSS networking implementation and CMake wiring.
 - 2026-06-25: Added initial domain/app source implementations and static library CMake wiring.
 - 2026-06-25: Documented the thread-safe repository and transactional `Update()` contract decision in agent guidance and architecture docs.
 - 2026-06-24: Clarified documentation scope: `buzzweb-server` is signaling-only and does not implement WebRTC media transport.

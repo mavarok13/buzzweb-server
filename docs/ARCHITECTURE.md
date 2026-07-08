@@ -4,14 +4,14 @@
 
 ## Current State
 
-The repository currently contains initial domain and application implementations:
+The repository currently contains initial domain, application, and minimal WSS networking implementations:
 
 - Public headers live under `include/buzzweb/`.
 - Domain and application method definitions live under `src/domain/` and `src/app/`.
 - `InMemoryRoomRepository` is available as the first concrete room repository.
 - There is no executable target.
 - The CMake target is a compiled static library that carries include paths, C++20 requirements, and dependency links.
-- Network-layer method definitions are not implemented yet.
+- Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, and session registry storage.
 
 ## Intended Layering
 
@@ -49,10 +49,10 @@ Application rules:
 
 Files: `include/buzzweb/net/`
 
-- `Server` is intended to own IO context, TLS context, listener, session registry, dispatcher reference, and logging.
-- `Listener` is intended to accept TCP/TLS connections and create sessions.
-- `Session` is intended to own one TLS WebSocket connection and handle inbound/outbound messages.
-- `SessionRegistry` is intended to track active sessions by participant ID.
+- `Server` owns IO context, TLS context, listener, session registry, dispatcher reference, and basic logging setup.
+- `Listener` accepts TCP connections and creates sessions.
+- `Session` owns one TLS WebSocket connection, performs TLS and WebSocket handshakes, reads text frames, maps JSON envelopes to control messages, dispatches them, and writes JSON responses.
+- `SessionRegistry` tracks active sessions by participant ID behind a mutex.
 
 Network rules:
 
@@ -70,8 +70,10 @@ Network rules:
 5. ControlDispatcher parses/routes messages by type.
 6. RoomService performs room use cases and persists state through RoomRepository.
 7. ControlDispatcher returns structured responses for create, join, and leave room requests.
-8. Session sends JSON responses/events to clients.
+8. Session sends JSON responses to clients.
 9. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
+
+Room broadcasts and WebRTC offer/answer/ICE relay events are still future work.
 
 ## Intended Signaling Messages
 
@@ -163,8 +165,8 @@ Later options:
 
 ## Important Constraints
 
-- The current code intentionally has declarations without definitions.
-- Adding networking/runtime implementations will require source files for the network layer and an executable target that wires repository, services, dispatcher, and server configuration.
+- The current code has library-level implementations but still no executable entry point.
+- Adding a runnable server still requires an executable target that wires repository, services, dispatcher, TLS certificate/key paths, and server configuration.
 - Keep media handling out of this server until there is an explicit feature decision to build an SFU or media relay.
 - For 1-to-1 calls, peer-to-peer WebRTC is enough for the intended MVP.
 - For group calls, plan for an SFU later rather than trying to relay media over WebSocket.

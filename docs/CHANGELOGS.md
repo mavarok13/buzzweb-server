@@ -2,6 +2,28 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-07-08 - Dev Docker Helper Scripts
+
+- Added `scripts/generate-dev-certs.sh` to create local self-signed development TLS files under ignored `certs/`.
+- Added `scripts/docker-build.sh` to build the `buzzweb-server` Docker image from the repository root.
+- Added `scripts/docker-run-dev.sh` to run the image with mounted dev certs and Git Bash/MSYS path conversion disabled for container paths.
+- Verification: `bash -n` passed for all added scripts.
+
+## 2026-07-08 - Docker Build SSL WebSocket Fix
+
+- Added the missing Boost.Beast SSL websocket support include to `include/buzzweb/net/Session.hpp`.
+- Fixed the Docker build failure where `boost::beast::websocket::stream<boost::asio::ssl::stream<...>>` could not find SSL teardown support during `Session.cpp` compilation.
+- Verification: `docker build -t buzzweb-server .` completed successfully.
+
+## 2026-06-26 - Minimal WSS Network Implementation
+
+- Added `src/net/Server.cpp`, `src/net/Listener.cpp`, `src/net/Session.cpp`, and `src/net/SessionRegistry.cpp`.
+- Implemented library-level WSS runtime ownership: `Server` owns IO/TLS/listener/registry, `Listener` accepts TCP sockets, and `Session` performs TLS handshake, WebSocket accept, text JSON reads, control dispatch, and JSON response writes.
+- Added a thread-safe `SessionRegistry` keyed by generated participant IDs.
+- Wired network sources into `CMakeLists.txt` and updated project context docs plus `AGENTS.md` to reflect that networking is no longer declarations-only.
+- Deliberately did not add broadcasts, WebRTC offer/answer/ICE relay, media transport over WebSocket, or an executable/config CLI.
+- Verification: `git diff --check` passed; `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug` is blocked because Boost package config is unavailable on this Windows host.
+
 ## 2026-06-25 - Domain And App Implementations
 
 - Added `src/domain/` implementations for `Participant`, `Room`, and the new `InMemoryRoomRepository`.
