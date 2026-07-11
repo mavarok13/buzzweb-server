@@ -4,6 +4,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-07-11: Added conditional empty-room cleanup through `RoomRepository::RemoveIfEmpty()` and mapped leave-room missing participant errors to `not_in_room`.
 - 2026-07-08: Added executable/runtime wiring with environment-based WSS config and initial participant-event delivery through a dispatcher callback and session registry.
 - 2026-06-26: Added minimal Boost.Asio/Beast WSS networking implementations for `Server`, `Listener`, `Session`, and `SessionRegistry`, wired into the static library.
 - 2026-06-25: Added initial `src/` implementations for the domain and application layers, including thread-safe `InMemoryRoomRepository`, `RoomService`, `ControlDispatcher`, and a compiled static CMake library target.
@@ -17,7 +18,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Add typed application result types for room use cases, such as `CreateRoomResult`, `JoinRoomResult`, `LeaveRoomResult`, and `ListParticipantsResult`.
 - Replace string-based service errors with stable status enums, such as `RoomNotFound`, `WrongPassword`, `AlreadyJoined`, and `RoomFull`.
 - Define participant identity lifecycle: a session may have a `ParticipantId` before joining, while a `Participant` is created for a room during successful create/join flow.
-- Decide whether `LeaveRoom` should remove empty rooms inside a repository-level operation or through a repository API that can erase safely after update.
+- Continue refining repository/service result contracts around typed statuses instead of string errors.
 
 ## MVP Signaling
 
@@ -26,7 +27,6 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Map typed `RoomService` results to stable JSON response and error codes.
 - Refine the runnable executable/config layer around the existing library-level WSS server.
 - Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WSS.
-- Remove rooms when they become empty.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.
 - Implement offer/answer/ICE relay between participants without parsing, validating, or terminating WebRTC media.

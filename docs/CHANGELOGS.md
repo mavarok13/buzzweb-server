@@ -2,6 +2,14 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-07-11 - Empty Room Cleanup Guidance
+
+- Added/finalized `RoomRepository::RemoveIfEmpty()` as the repository-level cleanup primitive for empty rooms after successful leave operations.
+- Fixed the in-memory implementation to erase empty rooms under the repository mutex and treat already-missing or non-empty rooms as idempotent cleanup no-ops.
+- Updated `RoomService::LeaveRoom()` behavior context to use the stable `not_in_room` protocol error code for missing participants.
+- Updated `AGENTS.md`, `docs/INFO.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/LAST_CHANGES.md` to match current executable/runtime and cleanup state.
+- Verification: `git diff --check` passed; no local build was run.
+
 ## 2026-07-08 - Runtime Event Wiring Build Fixes
 
 - Added/finalized runtime wiring for the executable to own `SessionRegistry`, pass it into `net::Server`, and provide a `ControlDispatcher` event handler that sends room participant events to connected sessions.

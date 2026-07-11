@@ -103,7 +103,7 @@ void RoomService::LeaveRoom(const domain::RoomCode& code, const domain::Particip
         code,
         [&participant_id, &service_error](domain::Room& room) {
             if (!room.HasParticipant(participant_id)) {
-                service_error = "participant_not_found";
+                service_error = "not_in_room";
                 return domain::RoomRepositoryDecision::Abort;
             }
 
@@ -113,8 +113,13 @@ void RoomService::LeaveRoom(const domain::RoomCode& code, const domain::Particip
     );
 
     ThrowIfFailed(service_error);
-    if (repository_result .type == domain::RoomRepositoryResult::Type::Failed) {
+    if (repository_result.type == domain::RoomRepositoryResult::Type::Failed) {
         ThrowIfFailed(repository_result.message);
+    }
+
+    auto remove_room_repos_result = repository_->RemoveIfEmpty(code);
+    if (remove_room_repos_result.type == domain::RoomRepositoryResult::Type::Failed) {
+        ThrowIfFailed(remove_room_repos_result.message);
     }
 }
 

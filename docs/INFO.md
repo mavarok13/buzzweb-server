@@ -25,8 +25,8 @@
 
 - `domain::Participant`: participant identity and display name.
 - `domain::Room`: room code, optional password hash, and vector of participants.
-- `domain::RoomRepository`: storage abstraction for rooms.
-- `domain::InMemoryRoomRepository`: thread-safe in-memory room storage using one repository-level mutex and transactional update copies.
+- `domain::RoomRepository`: storage abstraction for rooms, including conditional empty-room cleanup.
+- `domain::InMemoryRoomRepository`: thread-safe in-memory room storage using one repository-level mutex, transactional update copies, and conditional empty-room removal.
 - `app::RoomService`: implemented use-case layer for creating, joining, leaving, and listing room participants.
 - `app::ControlDispatcher`: implemented control-message router for create, join, and leave room messages using the current application structs, plus an event handler callback for participant events.
 - `net::Server`: top-level WSS server owner for IO context, TLS context, listener, and session registry.
@@ -40,6 +40,6 @@
 - Initial room-control JSON envelopes and examples are finalized in `AGENTS.md`; dispatcher-level routing and network parser/serializer implementations exist for direct create/join/leave responses.
 - Initial `participant_joined` and `participant_left` event delivery exists, but event payloads are still minimal and should be refined to match the finalized protocol examples exactly.
 - No WebRTC media stack is implemented or planned inside this server; SDP and ICE data should be relayed, not parsed as media.
-- No authentication, authorization, TURN integration, persistence, or room cleanup exists yet.
+- No authentication, authorization, TURN integration, or persistence exists yet.
 - No automated tests are configured.
 - Local CMake verification currently depends on installing/configuring Boost, OpenSSL, and `nlohmann_json`.

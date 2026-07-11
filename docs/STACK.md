@@ -6,11 +6,12 @@ Technical stack for `buzzweb-server`.
 
 - Language: C++20.
 - Build system: CMake, minimum version 3.24.
-- Current project target: `buzzweb_server` as a compiled static library.
+- Current library target: `buzzweb_server_lib` as a compiled static library.
 - Current alias target: `BuzzWeb::Server`.
-- Current stage: domain, application, and minimal WSS networking layers have `.cpp` implementations; there is no executable.
+- Current executable target: `buzzweb_server`.
+- Current stage: domain, application, minimal WSS networking, and executable runtime wiring have `.cpp` implementations.
 
-The project still needs an executable target once runtime server wiring is added.
+The executable loads TLS certificate/private-key paths and port from environment variables.
 
 ## C++ Dependencies
 
@@ -38,9 +39,15 @@ Planned or possible later dependencies:
 
 ## Runtime Configuration
 
-No runtime configuration CLI or environment loader is implemented yet.
+Runtime configuration is loaded from environment variables by the executable.
 
-The library-level `net::ServerConfig` currently carries only the listen port, TLS certificate file, and TLS private-key file.
+The library-level `net::ServerConfig` currently carries the listen port, TLS certificate file, and TLS private-key file.
+
+Current environment variables:
+
+- `BUZZWEB_CERTIFICATE_FILE_PATH` for the TLS certificate file.
+- `BUZZWEB_PRIVATE_KEY_PATH` for the TLS private-key file.
+- `BUZZWEB_SERVER_PORT` as an optional listen port override.
 
 Likely future settings:
 
@@ -56,7 +63,7 @@ Likely future settings:
 ## Deployment
 
 - `Dockerfile` uses `debian:12-slim` and installs `build-essential`, `cmake`, `ninja-build`, Boost, OpenSSL, `nlohmann_json`, and `pkg-config`.
-- Current Docker build command runs CMake configure and build for the static library; there is still no executable target.
+- Current Docker build command runs CMake configure and builds the `buzzweb_server` executable image.
 - No `docker-compose.yml` exists yet.
 - A realistic deployment will likely need the signaling server container plus external `coturn`, and optionally a reverse proxy.
 

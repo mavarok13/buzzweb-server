@@ -12,6 +12,7 @@ The repository currently contains initial domain, application, and minimal WSS n
 - There is an executable target that wires the in-memory repository, room service, dispatcher, session registry, environment config, and WSS server.
 - The CMake configuration builds a compiled static library plus the `buzzweb_server` executable.
 - Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, session registry storage, and initial participant-event delivery.
+- Empty rooms are removed through repository-level conditional cleanup after successful leave-room operations.
 
 ## Intended Layering
 
@@ -43,6 +44,7 @@ Application rules:
 - `RoomService` should be the only layer that mutates rooms through `RoomRepository`.
 - Network classes should call `ControlDispatcher` or `RoomService`, not mutate `Room` directly.
 - `RoomService` mutates rooms through `RoomRepository::Update()` so joins/leaves use repository-level transactional updates.
+- `RoomService` uses `RoomRepository::RemoveIfEmpty()` after successful leave operations so cleanup checks and removal happen under the repository lock.
 - If repository methods later expose mutable access, pointers/references must not be stored long-term in sessions.
 
 ### Network
@@ -167,7 +169,7 @@ Later options:
 ## Important Constraints
 
 - The current code has a runnable executable entry point wired to environment variables for TLS certificate path, private key path, and port.
-- Event payloads and runtime ownership should continue to be refined as room cleanup, typed results, and WebRTC relay are added.
+- Event payloads and runtime ownership should continue to be refined as typed results and WebRTC relay are added.
 - Keep media handling out of this server until there is an explicit feature decision to build an SFU or media relay.
 - For 1-to-1 calls, peer-to-peer WebRTC is enough for the intended MVP.
 - For group calls, plan for an SFU later rather than trying to relay media over WebSocket.

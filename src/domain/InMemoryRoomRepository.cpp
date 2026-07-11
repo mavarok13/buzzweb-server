@@ -88,6 +88,23 @@ RoomRepositoryResult InMemoryRoomRepository::Remove(const RoomCode& code)
     return BuildSuccessRoomRepositoryResult(code);
 }
 
+RoomRepositoryResult InMemoryRoomRepository::RemoveIfEmpty(const RoomCode& code)
+{
+    std::lock_guard lock(mutex_);
+
+    auto room = rooms_.find(code);
+    if (room == rooms_.end()) {
+        return BuildFailedRoomRepositoryResult("room_not_found", code);
+    }
+
+    if (room->second.IsEmpty()) {
+        rooms_.erase(room);
+        return BuildSuccessRoomRepositoryResult(code);
+    }
+
+    return BuildSuccessRoomRepositoryResult(code);
+}
+
 bool InMemoryRoomRepository::Exists(const RoomCode& code) const
 {
     std::lock_guard lock(mutex_);
