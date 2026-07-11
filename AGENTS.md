@@ -71,7 +71,7 @@ There is a runnable executable target. Domain, application, minimal WSS networki
 - Current `Room` stores participants in `std::vector<Participant>`, not `std::unordered_map`, because the MVP is expected to use small rooms.
 - Current `Participant` is intentionally minimal: identity and display name only.
 - Keep `RoomRepository` as a storage abstraction so in-memory, Redis, or PostgreSQL storage can be added later.
-- `RoomRepository` implementations must be thread-safe for all public methods, including `Add()`, `FindByCode()`, `Update()`, `Remove()`, `RemoveIfEmpty()`, `Exists()`, and `GetRoomCodes()`.
+- `RoomRepository` implementations must be thread-safe for all public methods, including `Add()`, `FindByCode()`, `Update()`, `Remove()`, `RemoveIfEmpty()`, `Exists()`, `ParticipantInRoom()`, and `GetRoomCodes()`.
 - For the MVP `InMemoryRoomRepository`, prefer one repository-level mutex over per-room mutexes. Per-room locking can be considered later only if contention becomes real and remove/update lifetime rules are designed explicitly.
 - `RoomRepository::Update()` uses a transactional copy-then-commit workflow: lock repository state, find the stored room, copy it, run the updater on the copy, and replace stored state only when the updater reports success.
 - `RoomRepository::Remove()` must be synchronized with `Update()` so a room cannot be removed while an update is being evaluated or committed.
@@ -268,9 +268,54 @@ Use one stable error shape for failed requests:
 }
 ```
 
-Initial stable error codes: `invalid_json`, `invalid_message`, `missing_field`, `invalid_field`, `room_not_found`, `wrong_password`, `already_joined`, `room_full`, `not_in_room`, and `internal_error`.
+Initial stable error codes: `invalid_json`, `invalid_message`, `missing_field`, `invalid_field`, `room_not_found`, `wrong_password`, `already_joined`, `room_full`, `not_in_room`, `participant_unavailable`, and `internal_error`.
 
-WebRTC signaling messages should be added after room control works, using the same envelope style for client requests and asynchronous relay events for `offer`, `answer`, and `ice_candidate`.
+WebRTC signaling relay is implemented for `offer`, `answer`, and `ice_candidate`. Requests use the same envelope style and direct responses use `offer_result`, `answer_result`, and `ice_candidate_result`.
+
+Signaling requests must include `room_code` and `target_participant_id`. The dispatcher verifies that the sender and target participant are both in the room before relaying. Runtime delivery then checks `SessionRegistry`; if the target has no active session, the sender receives `participant_unavailable`.
+
+Example `offer` request:
+
+```json
+{
+  "type": "offer",
+  "request_id": "req-004",
+  "payload": {
+    "room_code": "742913",
+    "target_participant_id": "p_01JZDEF456",
+    "sdp": "opaque-client-sdp"
+  }
+}
+```
+
+Example success response to the sender:
+
+```json
+{
+  "type": "offer_result",
+  "request_id": "req-004",
+  "ok": true,
+  "payload": {
+    "room_code": "742913"
+  }
+}
+```
+
+Example relay event delivered to the target participant:
+
+```json
+{
+  "type": "offer",
+  "payload": {
+    "room_code": "742913",
+    "target_participant_id": "p_01JZDEF456",
+    "from_participant_id": "p_01JZABC123",
+    "sdp": "opaque-client-sdp"
+  }
+}
+```
+
+Use the same shape for `answer` and `ice_candidate`; keep SDP and ICE payload data opaque to the server.
 
 ## Local Verification Policy
 

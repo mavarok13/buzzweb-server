@@ -44,6 +44,15 @@ std::optional<app::ControlMessageType> MessageTypeFromString(const std::string& 
     if (type == "get_room_participants") {
         return app::ControlMessageType::GetRoomParticipants;
     }
+    if (type == "offer") {
+        return app::ControlMessageType::Offer;
+    }
+    if (type == "answer") {
+        return app::ControlMessageType::Answer;
+    }
+    if (type == "ice_candidate") {
+        return app::ControlMessageType::IceCandidate;
+    }
 
     return std::nullopt;
 }
@@ -59,6 +68,25 @@ std::string ResultType(app::ControlMessageType type)
         return "leave_room_result";
     case app::ControlMessageType::GetRoomParticipants:
         return "get_room_participants_result";
+    case app::ControlMessageType::Offer:
+        return "offer_result";
+    case app::ControlMessageType::Answer:
+        return "answer_result";
+    case app::ControlMessageType::IceCandidate:
+        return "ice_candidate_result";
+    }
+
+    return "error";
+}
+
+std::string RelayType(app::ControlMessageType type) {
+    switch (type) {
+    case app::ControlMessageType::Offer:
+        return "offer";
+    case app::ControlMessageType::Answer:
+        return "answer";
+    case app::ControlMessageType::IceCandidate:
+        return "ice_candidate";
     }
 
     return "error";
@@ -122,6 +150,22 @@ std::string SerializeResponse(const app::ControlResponse& response)
             {"message", "Internal server error."}
         };
     }
+
+    return json.dump();
+}
+
+std::string SerializeRelay(const app::ControlRelay& relay) {
+    nlohmann::json json = {
+        {"type", RelayType(relay.type)},
+    };
+    json["payload"] = relay.payload;
+    json["payload"].update(
+        {
+            {"target_participant_id", relay.target_participant_id},
+            {"from_participant_id", relay.from_participant_id},
+            {"room_code", relay.room_code}
+        }
+    );
 
     return json.dump();
 }
@@ -316,6 +360,15 @@ void Session::HandleMessage(std::string message)
             control_message,
             [self](const app::ControlResponse& response) {
                 self->Send(SerializeResponse(response));
+            },
+            [self](const app::ControlRelay& relay) {
+                auto target_session = self->registry_.Find(relay.target_participant_id);
+                if (!target_session) {
+                    return false;
+                }
+
+                (*target_session)->Send(SerializeRelay(relay));
+                return true;
             }
         );
     } catch (const std::exception&) {

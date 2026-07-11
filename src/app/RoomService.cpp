@@ -133,4 +133,8 @@ std::vector<domain::Participant> RoomService::GetRoomParticipants(const domain::
     return room->GetParticipants();
 }
 
+bool RoomService::ParticipantInRoom(const domain::ParticipantId& participant_id, const domain::RoomCode& room_code) const {
+    return repository_->ParticipantInRoom(participant_id, room_code);
+}
+
 } // namespace buzzweb::app

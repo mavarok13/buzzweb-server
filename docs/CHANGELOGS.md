@@ -2,6 +2,23 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-07-11 - Browser WebRTC Demo Client
+
+- Added `client_demo/index.html` as a single-file vanilla HTML/CSS/JavaScript browser client for manual signaling-server testing.
+- Implemented WebSocket connect/disconnect, create/join/leave room requests, room and participant display, manual target participant selection, and pretty incoming/outgoing JSON logging.
+- Implemented real browser WebRTC flow with `RTCPeerConnection`, `getUserMedia({ audio: true, video: true })`, Google public STUN, offer/answer relay, ICE candidate relay, remote media playback, hang up/reset, and a pending ICE candidate queue.
+- Updated `docs/INFO.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/LAST_CHANGES.md` with the browser demo scope and signaling-only media boundary.
+- Verification: source/static inspection; no server-side build was needed for the static demo.
+
+## 2026-07-11 - WebRTC Signaling Relay
+
+- Added control message support for `offer`, `answer`, and `ice_candidate` as opaque WebRTC signaling relay messages.
+- Added `ControlRelay` and `ControlRelayHandler` so `ControlDispatcher` can validate signaling requests while `Session` performs targeted delivery through `SessionRegistry`.
+- Added participant membership checks through `RoomService::ParticipantInRoom()` and `RoomRepository::ParticipantInRoom()` before relaying signaling messages.
+- Added `participant_unavailable` for cases where the target participant is in the room but has no active session to receive the relay.
+- Updated `AGENTS.md`, `docs/INFO.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, and `docs/LAST_CHANGES.md` with the signaling relay behavior and protocol shape.
+- Verification: `git diff --check` passed; no local build was run.
+
 ## 2026-07-11 - Empty Room Cleanup Guidance
 
 - Added/finalized `RoomRepository::RemoveIfEmpty()` as the repository-level cleanup primitive for empty rooms after successful leave operations.

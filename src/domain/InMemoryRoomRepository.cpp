@@ -94,7 +94,7 @@ RoomRepositoryResult InMemoryRoomRepository::RemoveIfEmpty(const RoomCode& code)
 
     auto room = rooms_.find(code);
     if (room == rooms_.end()) {
-        return BuildFailedRoomRepositoryResult("room_not_found", code);
+        return BuildSuccessRoomRepositoryResult(code);
     }
 
     if (room->second.IsEmpty()) {
@@ -122,6 +122,17 @@ std::vector<RoomCode> InMemoryRoomRepository::GetRoomCodes() const
     }
 
     return codes;
+}
+
+bool InMemoryRoomRepository::ParticipantInRoom(const ParticipantId& participant_id, const RoomCode& room_code) const {
+    std::lock_guard lock(mutex_);
+
+    auto room = rooms_.find(room_code);
+    if (room == rooms_.end()) {
+        throw std::runtime_error("room_not_found");
+    }
+
+    return room->second.HasParticipant(participant_id);
 }
 
 } // namespace buzzweb::domain

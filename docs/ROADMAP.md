@@ -4,7 +4,9 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-07-11: Added a standalone browser WebRTC demo client for manual two-tab testing of the signaling relay and peer-to-peer audio/video.
 - 2026-07-11: Added conditional empty-room cleanup through `RoomRepository::RemoveIfEmpty()` and mapped leave-room missing participant errors to `not_in_room`.
+- 2026-07-11: Added WebRTC signaling relay for `offer`, `answer`, and `ice_candidate` with room membership checks and target session availability errors.
 - 2026-07-08: Added executable/runtime wiring with environment-based WSS config and initial participant-event delivery through a dispatcher callback and session registry.
 - 2026-06-26: Added minimal Boost.Asio/Beast WSS networking implementations for `Server`, `Listener`, `Session`, and `SessionRegistry`, wired into the static library.
 - 2026-06-25: Added initial `src/` implementations for the domain and application layers, including thread-safe `InMemoryRoomRepository`, `RoomService`, `ControlDispatcher`, and a compiled static CMake library target.
@@ -29,7 +31,6 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WSS.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.
-- Implement offer/answer/ICE relay between participants without parsing, validating, or terminating WebRTC media.
 - Refine `participant_joined` and `participant_left` event payloads to match the finalized protocol examples exactly.
 - Add basic logging for server lifecycle, sessions, room operations, and protocol errors.
 
@@ -55,7 +56,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Product Ideas
 
-- Browser client using native WebRTC APIs.
+- Evolve the standalone browser demo into a real browser client using native WebRTC APIs.
 - Native desktop client using `libdatachannel` or `libwebrtc` plus PortAudio/miniaudio.
 - Room session tokens to allow reconnects.
 - TURN server credentials and short-lived ICE server configuration for clients.

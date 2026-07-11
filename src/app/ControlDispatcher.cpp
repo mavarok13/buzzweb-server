@@ -76,6 +76,9 @@ std::string ErrorMessage(const std::string& code)
     if (code == "not_in_room") {
         return "Participant is not in the room.";
     }
+    if (code == "participant_unavailable") {
+        return "Participant is not connected.";
+    }
 
     return "Internal server error.";
 }
@@ -140,7 +143,8 @@ ControlDispatcher::~ControlDispatcher() = default;
 void ControlDispatcher::Dispatch(
     const domain::ParticipantId& participant_id,
     const ControlMessage& message,
-    ControlSendHandler send
+    ControlSendHandler send,
+    ControlRelayHandler relay
 )
 {
     if (!send) {
@@ -201,6 +205,39 @@ void ControlDispatcher::Dispatch(
 
             send(SuccessResponse(response_type, message.request_id, {{"room_code", room_code}}));
             event_handler_(room_code, participant_id, SerializeControlEventData({ControlMessageType::LeftEvent, room_code, participant_id}));
+            return;
+        }
+
+        if (message.type == ControlMessageType::Offer || message.type == ControlMessageType::Answer || message.type == ControlMessageType::IceCandidate) {
+            auto target_participant_id = RequiredString(message.payload, "target_participant_id");
+            auto room_code = RequiredString(message.payload, "room_code");
+
+            // * Log
+            if (!room_service_.ParticipantInRoom(participant_id, room_code)) {
+                send(ErrorResponse(response_type, message.request_id, "not_in_room"));
+                return;
+            }
+            if (!room_service_.ParticipantInRoom(target_participant_id, room_code)) {
+                send(ErrorResponse(response_type, message.request_id, "not_in_room"));
+                return;
+            }
+
+            ControlRelay relay_message{
+                response_type,
+                target_participant_id,
+                participant_id,
+                room_code,
+                message.payload
+            };
+
+            bool success_relay = relay(relay_message);
+            if (!success_relay) {
+                send(ErrorResponse(response_type, message.request_id, "participant_unavailable"));
+                return;
+            }
+
+            send(SuccessResponse(response_type, message.request_id, {{"room_code", room_code}}));
+
             return;
         }
 

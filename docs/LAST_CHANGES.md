@@ -4,14 +4,16 @@ Updated: 2026-07-11
 
 ## Current Implementation Update
 
-- Added conditional empty-room cleanup with `RoomRepository::RemoveIfEmpty()` and wired `RoomService::LeaveRoom()` to call it after successful leave operations.
-- Leave-room missing participant errors now use the protocol error code `not_in_room`.
-- Updated repository guidance and docs to reflect the executable target, environment-based runtime config, and current cleanup behavior.
-- Fully protocol-complete participant-event payloads and WebRTC offer/answer/ICE relay are still not implemented.
+- Added `client_demo/index.html`, a standalone vanilla browser demo for manual two-tab WebSocket/WSS signaling and real browser-to-browser WebRTC audio/video.
+- The demo supports create/join/leave room, participant targeting, local and remote video, offer/answer/ICE relay, pending ICE candidate queueing, and pretty incoming/outgoing JSON logs.
+- The demo keeps media in WebRTC and uses the C++ server only as a signaling relay.
+- Fully protocol-complete participant-event payloads in the server are still not implemented.
 
 ## Latest Code History Summary
 
+- 2026-07-11: Added standalone browser WebRTC signaling demo under `client_demo/`.
 - 2026-07-11: Added conditional empty-room cleanup and updated repository/runtime guidance.
+- 2026-07-11: Added WebRTC offer/answer/ICE signaling relay with target-session availability checks.
 - 2026-07-08: Added executable/runtime event wiring and verified Docker build after compile fixes.
 - 2026-07-08: Added dev Docker/certificate helper scripts.
 - 2026-07-08: Fixed Boost.Beast SSL websocket build failure and verified Docker image build.

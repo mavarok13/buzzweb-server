@@ -37,6 +37,13 @@ Planned or possible later dependencies:
 - STUN/TURN service, likely `coturn`, for client NAT traversal once real WebRTC clients are tested.
 - Optional reverse proxy such as Caddy or nginx for TLS termination, depending on deployment design.
 
+## Browser Demo
+
+- `client_demo/index.html` is a single-file vanilla HTML/CSS/JavaScript demo with no build tools or external dependencies.
+- It uses browser Web APIs: `WebSocket`, `RTCPeerConnection`, `RTCSessionDescription`, `RTCIceCandidate`, and `navigator.mediaDevices.getUserMedia({ audio: true, video: true })`.
+- The demo currently uses `stun:stun.l.google.com:19302` as a basic public STUN server for local browser-to-browser testing.
+- The demo is for manual verification only; it is not part of the CMake or Docker build.
+
 ## Runtime Configuration
 
 Runtime configuration is loaded from environment variables by the executable.

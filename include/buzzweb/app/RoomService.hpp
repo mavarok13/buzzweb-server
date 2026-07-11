@@ -23,6 +23,7 @@ public:
     );
     void LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id);
     std::vector<domain::Participant> GetRoomParticipants(const domain::RoomCode& code) const;
+    bool ParticipantInRoom(const domain::ParticipantId& participant_id, const domain::RoomCode& room_code) const;
 
 private:
     domain::RoomRepositoryPtr repository_;

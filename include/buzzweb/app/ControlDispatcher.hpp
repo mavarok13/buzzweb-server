@@ -17,7 +17,10 @@ enum ControlMessageType {
     LeaveRoom,
     GetRoomParticipants,
     JoinEvent,
-    LeftEvent
+    LeftEvent,
+    Offer,
+    Answer,
+    IceCandidate
 };
 
 struct ControlMessage {
@@ -39,6 +42,15 @@ struct ControlResponse {
     std::optional<ControlError> error;
 };
 
+struct ControlRelay {
+public:
+    ControlMessageType type;
+    domain::ParticipantId target_participant_id;
+    domain::ParticipantId from_participant_id;
+    domain::RoomCode room_code;
+    nlohmann::json payload;
+};
+
 struct ControlEventData {
 public:
     ControlMessageType type;
@@ -48,6 +60,7 @@ public:
 
 using ControlSendHandler = std::function<void(const ControlResponse& response)>;
 using ControlEventHandler = std::function<void(domain::RoomCode room_code, domain::ParticipantId participant_id, const std::string& event_message)>;
+using ControlRelayHandler = std::function<bool(const app::ControlRelay& relay)>;
 
 class ControlDispatcher {
 public:
@@ -57,7 +70,8 @@ public:
     void Dispatch(
         const domain::ParticipantId& participant_id,
         const ControlMessage& message,
-        ControlSendHandler send
+        ControlSendHandler send,
+        ControlRelayHandler replay
     );
 
 private:

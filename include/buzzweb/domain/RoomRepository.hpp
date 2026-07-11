@@ -37,6 +37,7 @@ public:
     virtual RoomRepositoryResult Remove(const RoomCode& code) = 0;
     virtual RoomRepositoryResult RemoveIfEmpty(const RoomCode& code) = 0;
     virtual bool Exists(const RoomCode& code) const = 0;
+    virtual bool ParticipantInRoom(const ParticipantId& participant_id, const RoomCode& room_code) const = 0;
     virtual std::vector<RoomCode> GetRoomCodes() const = 0;
 };
 
