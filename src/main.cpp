@@ -1,6 +1,9 @@
 #include <iostream>
 #include <memory>
 #include <cstdlib>
+#include <stdexcept>
+
+#include <nlohmann/json.hpp>
 
 #include "buzzweb/domain/InMemoryRoomRepository.hpp"
 #include "buzzweb/app/RoomService.hpp"
@@ -26,16 +29,30 @@ int main () {
     auto repository = std::make_shared<buzzweb::domain::InMemoryRoomRepository>();
     buzzweb::app::RoomService room_service(repository);
     buzzweb::net::SessionRegistry registry;
-    buzzweb::app::ControlDispatcher dispatcher(room_service, [&room_service, &registry] (buzzweb::domain::RoomCode room_code, buzzweb::domain::ParticipantId participant_id, const std::string & event_message) {
-        const auto participants = room_service.GetRoomParticipants(room_code);
+    buzzweb::app::ControlDispatcher dispatcher(room_service, [&registry] (const buzzweb::app::ControlEventData& event, const std::vector<buzzweb::domain::Participant>& participants) {
         for (const auto participant : participants) {
-            if (participant.GetId() == participant_id) {
+            if (participant.GetId() == event.sender_participant_id) {
                 continue;
             }
 
-            auto session_ptr = registry.Find(participant.GetId());
-            if (session_ptr) {
-                (*session_ptr)->Send(event_message);
+            auto session_ptr_opt = registry.Find(participant.GetId());
+            if (session_ptr_opt) {
+
+                std::string event_type;
+                if (event.type == buzzweb::app::ControlEventType::Joined) {
+                    event_type = "participant_joined";
+                } else if (event.type == buzzweb::app::ControlEventType::Left) {
+                    event_type = "participant_left";
+                } else {
+                    throw std::runtime_error("invalid_event_type");
+                }
+
+                nlohmann::json event_message = {
+                    {"type", event_type},
+                    {"payload", event.payload}
+                };
+
+                (*session_ptr_opt)->Send(event_message.dump());
             }
         }
     });

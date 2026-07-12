@@ -4,6 +4,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-07-12: Added structured participant event data for joined/left events, avoided post-leave room rereads, tightened leave-all cleanup error handling, and made session registry removal cleanup log-and-continue.
 - 2026-07-11: Added a standalone browser WebRTC demo client for manual two-tab testing of the signaling relay and peer-to-peer audio/video.
 - 2026-07-11: Added conditional empty-room cleanup through `RoomRepository::RemoveIfEmpty()` and mapped leave-room missing participant errors to `not_in_room`.
 - 2026-07-11: Added WebRTC signaling relay for `offer`, `answer`, and `ice_candidate` with room membership checks and target session availability errors.
@@ -31,7 +32,6 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WSS.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.
-- Refine `participant_joined` and `participant_left` event payloads to match the finalized protocol examples exactly.
 - Add basic logging for server lifecycle, sessions, room operations, and protocol errors.
 
 ## Verification And Quality

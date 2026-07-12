@@ -57,7 +57,7 @@ domain::Room RoomService::CreateRoom(std::optional<std::string> password)
     throw std::runtime_error("room_code_generation_failed");
 }
 
-domain::Room RoomService::JoinRoom(
+RoomService::ParticipantJoinedRoom RoomService::JoinRoom(
     const domain::RoomCode& code,
     domain::Participant participant,
     std::optional<std::string> password_hash
@@ -66,9 +66,11 @@ domain::Room RoomService::JoinRoom(
     std::optional<domain::Room> joined_room;
     std::optional<std::string> service_error;
 
+    std::vector<domain::Participant> room_participants;
+
     auto repository_result = repository_->Update(
         code,
-        [participant = std::move(participant), password_hash = std::move(password_hash), &joined_room, &service_error](domain::Room& room) {
+        [participant, password_hash = std::move(password_hash), &joined_room, &service_error, &room_participants](domain::Room& room) {
             if (room.IsPasswordProtected() && room.GetPasswordHash() != password_hash) {
                 service_error = "wrong_password";
                 return domain::RoomRepositoryDecision::Abort;
@@ -81,6 +83,7 @@ domain::Room RoomService::JoinRoom(
 
             room.AddParticipant(participant);
             joined_room = room;
+            room_participants = room.GetParticipants();
             return domain::RoomRepositoryDecision::Commit;
         }
     );
@@ -93,21 +96,24 @@ domain::Room RoomService::JoinRoom(
         throw std::runtime_error("internal_error");
     }
 
-    return *joined_room;
+    return {code, participant, room_participants};
 }
 
-void RoomService::LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id)
+RoomService::ParticipantLeftRoom RoomService::LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id)
 {
+    std::vector<domain::Participant> remaining_participants;
+
     std::optional<std::string> service_error;
     auto repository_result = repository_->Update(
         code,
-        [&participant_id, &service_error](domain::Room& room) {
+        [&participant_id, &service_error, &remaining_participants](domain::Room& room) {
             if (!room.HasParticipant(participant_id)) {
                 service_error = "not_in_room";
                 return domain::RoomRepositoryDecision::Abort;
             }
 
             room.RemoveParticipant(participant_id);
+            remaining_participants = room.GetParticipants();
             return domain::RoomRepositoryDecision::Commit;
         }
     );
@@ -121,6 +127,30 @@ void RoomService::LeaveRoom(const domain::RoomCode& code, const domain::Particip
     if (remove_room_repos_result.type == domain::RoomRepositoryResult::Type::Failed) {
         ThrowIfFailed(remove_room_repos_result.message);
     }
+
+    return {code, participant_id, remaining_participants};
+}
+
+std::vector<RoomService::ParticipantLeftRoom> RoomService::LeaveAllRooms(const domain::ParticipantId& participant_id) {
+    std::vector<RoomService::ParticipantLeftRoom> left_room;
+
+    for (const auto& room_code : repository_->GetRoomCodes()) {
+        try {
+            if (!repository_->ParticipantInRoom(participant_id, room_code)) {
+                continue;
+            }
+
+            left_room.push_back(LeaveRoom(room_code, participant_id));
+        } catch (const std::runtime_error& error) {
+            const std::string code = error.what();
+            if (code == "room_not_found" || code == "not_in_room") {
+                continue;
+            }
+            throw;
+        }
+    }
+
+    return left_room;
 }
 
 std::vector<domain::Participant> RoomService::GetRoomParticipants(const domain::RoomCode& code) const

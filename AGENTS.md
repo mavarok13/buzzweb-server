@@ -79,7 +79,14 @@ There is a runnable executable target. Domain, application, minimal WSS networki
 - Updaters return commit/abort status. If the updater aborts or fails validation, leave the stored room unchanged.
 - Do not put mutexes inside `Room` for the MVP. Keep `Room` a domain value object and keep synchronization in the repository implementation.
 - Updaters passed to `RoomRepository::Update()` must not call back into the same repository, because the repository may already hold its mutex.
+- `RoomService` leave/disconnect cleanup should use the structured leave result data instead of rereading the room after mutation; event recipients should come from the participant list already prepared by the application/control layer.
+- `RoomService::LeaveAllRooms()` should swallow only expected cleanup misses, currently `room_not_found` and `not_in_room`; unexpected errors should continue to propagate.
 - Prefer small, direct changes that match the current early implementation stage.
+
+## Runtime Cleanup Guidance
+
+- `Session::RemoveFromRegistry()` is part of connection-close cleanup. It should log cleanup exceptions and keep the close path moving rather than letting cleanup failures break session shutdown.
+- Runtime room-event delivery should use the participant recipient list supplied in the structured event data. Avoid rereading room state from `main.cpp` after leave/disconnect just to discover recipients.
 
 ## JSON Protocol Guidance
 
@@ -213,6 +220,8 @@ Send `participant_joined` to existing room participants after a successful join:
 }
 ```
 
+`participant_joined` is implemented as a structured participant event. The payload should include both the joined `participant` object and the full current `participants` list.
+
 `leave_room` uses the calling session participant identity and the target room code:
 
 ```json
@@ -253,6 +262,8 @@ Send `participant_left` to remaining room participants after a successful leave:
   }
 }
 ```
+
+`participant_left` is implemented as a structured participant event. The payload should include the departed `participant_id` and the remaining `participants` list.
 
 Use one stable error shape for failed requests:
 

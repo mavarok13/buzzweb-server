@@ -2,6 +2,15 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-07-12 - Structured Participant Events And Cleanup
+
+- Updated participant-event handling guidance for the new `ControlEventData` shape with structured event data and prepared participant recipient lists.
+- Documented that `participant_joined` now carries a `participant` object plus `participants`, and `participant_left` carries `participant_id` plus `participants`.
+- Documented that runtime leave/disconnect handling no longer rereads the room after cleanup and that event delivery recipients come from the prepared participant list.
+- Documented `RoomService::LeaveAllRooms()` cleanup semantics: swallow only expected `room_not_found` and `not_in_room`, and propagate unexpected errors.
+- Documented that `Session::RemoveFromRegistry()` logs cleanup exceptions without breaking the close path.
+- Verification: documentation inspection; `git diff --check` was reported clean except CRLF warnings.
+
 ## 2026-07-11 - Browser WebRTC Demo Client
 
 - Added `client_demo/index.html` as a single-file vanilla HTML/CSS/JavaScript browser client for manual signaling-server testing.

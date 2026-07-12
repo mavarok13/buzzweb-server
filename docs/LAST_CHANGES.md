@@ -1,16 +1,18 @@
 # Last Changes
 
-Updated: 2026-07-11
+Updated: 2026-07-12
 
 ## Current Implementation Update
 
-- Added `client_demo/index.html`, a standalone vanilla browser demo for manual two-tab WebSocket/WSS signaling and real browser-to-browser WebRTC audio/video.
-- The demo supports create/join/leave room, participant targeting, local and remote video, offer/answer/ICE relay, pending ICE candidate queueing, and pretty incoming/outgoing JSON logs.
-- The demo keeps media in WebRTC and uses the C++ server only as a signaling relay.
-- Fully protocol-complete participant-event payloads in the server are still not implemented.
+- Participant event delivery now uses structured event data. `participant_joined` includes the joined participant object and current participants list; `participant_left` includes the departed participant ID and remaining participants list.
+- Runtime event delivery recipients come from the already prepared participant list rather than rereading the room after leave/disconnect.
+- `main.cpp` no longer rereads rooms after leave/disconnect just to build event recipients.
+- `RoomService::LeaveAllRooms()` swallows only expected `room_not_found` and `not_in_room` cleanup misses; unexpected errors still propagate.
+- `Session::RemoveFromRegistry()` logs cleanup exceptions and keeps the session close path from being broken by cleanup failures.
 
 ## Latest Code History Summary
 
+- 2026-07-12: Added structured participant event data and tightened leave/disconnect cleanup behavior.
 - 2026-07-11: Added standalone browser WebRTC signaling demo under `client_demo/`.
 - 2026-07-11: Added conditional empty-room cleanup and updated repository/runtime guidance.
 - 2026-07-11: Added WebRTC offer/answer/ICE signaling relay with target-session availability checks.

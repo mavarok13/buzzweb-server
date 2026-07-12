@@ -409,6 +409,12 @@ void Session::RemoveFromRegistry()
 
     registered_ = false;
     registry_.Remove(participant_id_);
+
+    try {
+        dispatcher_.HandleParticipantDisconnected(participant_id_);
+    } catch (const std::exception& ex) {
+        BOOST_LOG_TRIVIAL(error) << "Session " << participant_id_ << " failed: " << ex.what();
+    }
 }
 
 void Session::Fail(boost::system::error_code error)

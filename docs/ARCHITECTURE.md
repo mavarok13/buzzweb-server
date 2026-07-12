@@ -11,8 +11,8 @@ The repository currently contains initial domain, application, and minimal WSS n
 - `InMemoryRoomRepository` is available as the first concrete room repository.
 - There is an executable target that wires the in-memory repository, room service, dispatcher, session registry, environment config, and WSS server.
 - The CMake configuration builds a compiled static library plus the `buzzweb_server` executable.
-- Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, session registry storage, initial participant-event delivery, and targeted WebRTC signaling relay.
-- Empty rooms are removed through repository-level conditional cleanup after successful leave-room operations.
+- Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, session registry storage, structured participant-event delivery, and targeted WebRTC signaling relay.
+- Empty rooms are removed through repository-level conditional cleanup after successful leave-room operations. Leave/disconnect runtime cleanup uses prepared structured result/event data instead of rereading room state after mutation.
 - A standalone browser demo exists at `client_demo/index.html` for manual two-tab WebSocket/WSS signaling and peer-to-peer WebRTC media testing.
 
 ## Intended Layering
@@ -38,7 +38,7 @@ Domain rules:
 Files: `include/buzzweb/app/`
 
 - `RoomService` is the intended use-case layer for `CreateRoom`, `JoinRoom`, `LeaveRoom`, and `ListParticipants`.
-- `ControlDispatcher` is the intended bridge between JSON control/signaling messages and application services, emits participant-event messages through a callback supplied by runtime wiring, and emits targeted relay messages through a delivery callback.
+- `ControlDispatcher` is the intended bridge between JSON control/signaling messages and application services, emits structured participant-event messages through a callback supplied by runtime wiring, and emits targeted relay messages through a delivery callback.
 
 Application rules:
 
@@ -55,7 +55,7 @@ Files: `include/buzzweb/net/`
 
 - `Server` owns IO context, TLS context, listener, dispatcher reference, and basic logging setup; the executable now owns `SessionRegistry` and passes it into the server/runtime event bridge.
 - `Listener` accepts TCP connections and creates sessions.
-- `Session` owns one TLS WebSocket connection, performs TLS and WebSocket handshakes, reads text frames, maps JSON envelopes to control messages, dispatches them, writes JSON responses, and uses `SessionRegistry` for targeted signaling relay delivery.
+- `Session` owns one TLS WebSocket connection, performs TLS and WebSocket handshakes, reads text frames, maps JSON envelopes to control messages, dispatches them, writes JSON responses, uses `SessionRegistry` for targeted signaling relay delivery, and logs close-path cleanup exceptions without breaking session shutdown.
 - `SessionRegistry` tracks active sessions by participant ID behind a mutex.
 
 Network rules:
@@ -75,11 +75,11 @@ Network rules:
 6. RoomService performs room use cases and persists state through RoomRepository.
 7. ControlDispatcher returns structured responses for create, join, and leave room requests.
 8. Session sends JSON responses to clients.
-9. ControlDispatcher emits participant events through a callback; runtime wiring resolves room participants to sessions through `SessionRegistry` and sends event JSON to connected recipients.
+9. ControlDispatcher emits structured participant events through a callback; runtime wiring sends event JSON to recipients from the prepared participant list through `SessionRegistry`.
 10. For `offer`, `answer`, and `ice_candidate`, ControlDispatcher validates sender and target room membership, emits a `ControlRelay`, and Session runtime delivery sends the relay event to the target participant's active session.
 11. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
 
-Initial participant events and WebRTC offer/answer/ICE relay events exist. Participant event payloads still need refinement to exactly match the finalized room-control examples.
+Structured participant events and WebRTC offer/answer/ICE relay events exist. `participant_joined` carries the joined participant object and current participants list; `participant_left` carries the departed participant ID and remaining participants list.
 
 ## Intended Signaling Messages
 
@@ -174,7 +174,7 @@ Later options:
 ## Important Constraints
 
 - The current code has a runnable executable entry point wired to environment variables for TLS certificate path, private key path, and port.
-- Event payloads and runtime ownership should continue to be refined as typed results, logging, and protocol tests are added.
+- Event payloads and runtime ownership should continue to be covered by typed results, logging, and protocol tests as they are added.
 - Keep media handling out of this server until there is an explicit feature decision to build an SFU or media relay.
 - For 1-to-1 calls, peer-to-peer WebRTC is enough for the intended MVP.
 - For group calls, plan for an SFU later rather than trying to relay media over WebSocket.

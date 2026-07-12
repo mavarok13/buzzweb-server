@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace buzzweb::app {
 
@@ -16,11 +17,14 @@ enum ControlMessageType {
     JoinRoom,
     LeaveRoom,
     GetRoomParticipants,
-    JoinEvent,
-    LeftEvent,
     Offer,
     Answer,
     IceCandidate
+};
+
+enum ControlEventType {
+    Joined,
+    Left
 };
 
 struct ControlMessage {
@@ -53,13 +57,16 @@ public:
 
 struct ControlEventData {
 public:
-    ControlMessageType type;
+    ControlEventType type;
     domain::RoomCode room_code;
-    domain::ParticipantId participant_id;
+    domain::ParticipantId sender_participant_id;
+    nlohmann::json payload;
 };
 
+using Participants = std::vector<domain::Participant>;
+
 using ControlSendHandler = std::function<void(const ControlResponse& response)>;
-using ControlEventHandler = std::function<void(domain::RoomCode room_code, domain::ParticipantId participant_id, const std::string& event_message)>;
+using ControlEventHandler = std::function<void(const ControlEventData& event, const Participants& participants)>;
 using ControlRelayHandler = std::function<bool(const app::ControlRelay& relay)>;
 
 class ControlDispatcher {
@@ -73,6 +80,8 @@ public:
         ControlSendHandler send,
         ControlRelayHandler replay
     );
+
+    void HandleParticipantDisconnected(const domain::ParticipantId& participant_id);
 
 private:
     RoomService& room_service_;
