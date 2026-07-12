@@ -49,13 +49,13 @@ If the index is missing, run `codebase-index index`. If it is stale, run `codeba
 - `include/buzzweb/app/` contains application-layer declarations: `RoomService` and `ControlDispatcher`.
 - `src/domain/` contains implementations for domain value objects and `InMemoryRoomRepository`.
 - `src/app/` contains implementations for room use cases and control-message dispatch.
-- `include/buzzweb/net/` contains networking declarations: `Server`, `Listener`, `Session`, and `SessionRegistry`.
-- `src/net/` contains the minimal Boost.Asio/Beast WSS server, listener, session, and session-registry implementations.
+- `include/buzzweb/net/` contains networking declarations: `Server`, `Listener`, `SessionBase`, `PlainSession`, `SslSession`, and `SessionRegistry`.
+- `src/net/` contains the minimal Boost.Asio/Beast WS/WSS server, listener, session, and session-registry implementations.
 - `session-ses_115d.md` contains planning context for WebRTC, WSS signaling, deployment, CMake, and domain/repository design.
 - `session-ses_114d.md` contains the initial development session that created the current skeleton and naming conventions.
 - `docs/` contains persistent project context for agents.
 
-There is a runnable executable target. Domain, application, minimal WSS networking, runtime config, and entry-point code have `.cpp` implementations under `src/`.
+There is a runnable executable target. Domain, application, minimal WS/WSS networking, runtime config, and entry-point code have `.cpp` implementations under `src/`.
 
 ## Coding Guidelines
 
@@ -83,9 +83,20 @@ There is a runnable executable target. Domain, application, minimal WSS networki
 - `RoomService::LeaveAllRooms()` should swallow only expected cleanup misses, currently `room_not_found` and `not_in_room`; unexpected errors should continue to propagate.
 - Prefer small, direct changes that match the current early implementation stage.
 
+## Runtime Configuration Guidance
+
+- `BUZZWEB_TLS_ENABLED` controls whether the server accepts WSS or plain WS. TLS is enabled by default.
+- Treat `BUZZWEB_TLS_ENABLED=0`, `BUZZWEB_TLS_ENABLED=false`, and `BUZZWEB_TLS_ENABLED=FALSE` as disabling TLS; other values should keep TLS enabled.
+- When TLS is enabled, `BUZZWEB_CERTIFICATE_FILE_PATH` and `BUZZWEB_PRIVATE_KEY_PATH` are required and loaded into the server TLS context.
+- When TLS is disabled, certificate and private-key environment variables are not required; the listener should create plain WebSocket sessions.
+- `BUZZWEB_SERVER_PORT` remains the optional listen port override for both WS and WSS modes.
+
 ## Runtime Cleanup Guidance
 
-- `Session::RemoveFromRegistry()` is part of connection-close cleanup. It should log cleanup exceptions and keep the close path moving rather than letting cleanup failures break session shutdown.
+- `SessionBase` owns shared session behavior such as participant identity, dispatcher access, registry cleanup, and message handling. Keep transport-specific handshake and lowest-layer close behavior in `PlainSession` or `SslSession`.
+- `SessionRegistry` stores `std::shared_ptr<SessionBase>` so runtime delivery can target either plain WS or TLS WSS sessions through the same `Send()`/`Close()` interface.
+- `Listener` should select `SslSession` when TLS is enabled and `PlainSession` when TLS is disabled. Avoid duplicating control-message handling between the two session modes.
+- `SessionBase::RemoveFromRegistry()` is part of connection-close cleanup. It should log cleanup exceptions and keep the close path moving rather than letting cleanup failures break session shutdown.
 - Runtime room-event delivery should use the participant recipient list supplied in the structured event data. Avoid rereading room state from `main.cpp` after leave/disconnect just to discover recipients.
 
 ## JSON Protocol Guidance

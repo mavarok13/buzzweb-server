@@ -9,9 +9,9 @@ Technical stack for `buzzweb-server`.
 - Current library target: `buzzweb_server_lib` as a compiled static library.
 - Current alias target: `BuzzWeb::Server`.
 - Current executable target: `buzzweb_server`.
-- Current stage: domain, application, minimal WSS networking, and executable runtime wiring have `.cpp` implementations.
+- Current stage: domain, application, minimal WS/WSS networking, and executable runtime wiring have `.cpp` implementations.
 
-The executable loads TLS certificate/private-key paths and port from environment variables.
+The executable loads TLS mode, TLS certificate/private-key paths when needed, and port from environment variables.
 
 ## C++ Dependencies
 
@@ -20,7 +20,7 @@ The executable loads TLS certificate/private-key paths and port from environment
 - Boost.Asio for networking and TLS stream integration.
 - Boost.Log and Boost.LogSetup for logging.
 - Boost.Thread for Boost.Log/threading support.
-- OpenSSL for TLS/WSS and security primitives.
+- OpenSSL for TLS/WSS and security primitives. Plain WS mode still links the networking stack but skips TLS handshake and certificate loading at runtime.
 - `nlohmann_json` for JSON control/signaling messages.
 
 Planned or possible later dependencies:
@@ -48,13 +48,14 @@ Planned or possible later dependencies:
 
 Runtime configuration is loaded from environment variables by the executable.
 
-The library-level `net::ServerConfig` currently carries the listen port, TLS certificate file, and TLS private-key file.
+The library-level `net::ServerConfig` currently carries the listen port, TLS certificate file, TLS private-key file, and `tls_enabled` flag.
 
 Current environment variables:
 
-- `BUZZWEB_CERTIFICATE_FILE_PATH` for the TLS certificate file.
-- `BUZZWEB_PRIVATE_KEY_PATH` for the TLS private-key file.
-- `BUZZWEB_SERVER_PORT` as an optional listen port override.
+- `BUZZWEB_TLS_ENABLED` as an optional TLS switch. TLS is enabled by default; `0`, `false`, and `FALSE` disable TLS and run plain WS.
+- `BUZZWEB_CERTIFICATE_FILE_PATH` for the TLS certificate file, required only when TLS is enabled.
+- `BUZZWEB_PRIVATE_KEY_PATH` for the TLS private-key file, required only when TLS is enabled.
+- `BUZZWEB_SERVER_PORT` as an optional listen port override for both WS and WSS modes.
 
 Likely future settings:
 
@@ -62,6 +63,7 @@ Likely future settings:
 - Listen port.
 - TLS certificate file.
 - TLS private key file.
+- TLS mode defaults and validation policy.
 - Log level.
 - Allowed origins or deployment host settings.
 - TURN/STUN URLs advertised to clients.

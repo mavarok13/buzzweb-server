@@ -4,14 +4,14 @@
 
 ## Current State
 
-The repository currently contains initial domain, application, and minimal WSS networking implementations:
+The repository currently contains initial domain, application, and minimal WS/WSS networking implementations:
 
 - Public headers live under `include/buzzweb/`.
 - Domain and application method definitions live under `src/domain/` and `src/app/`.
 - `InMemoryRoomRepository` is available as the first concrete room repository.
-- There is an executable target that wires the in-memory repository, room service, dispatcher, session registry, environment config, and WSS server.
+- There is an executable target that wires the in-memory repository, room service, dispatcher, session registry, environment config, and WS/WSS server.
 - The CMake configuration builds a compiled static library plus the `buzzweb_server` executable.
-- Network-layer method definitions exist for server ownership, TCP accept, TLS/WebSocket handshakes, JSON control dispatch, response writes, session registry storage, structured participant-event delivery, and targeted WebRTC signaling relay.
+- Network-layer method definitions exist for server ownership, TCP accept, plain WebSocket and TLS WebSocket session startup, JSON control dispatch, response writes, session registry storage, structured participant-event delivery, and targeted WebRTC signaling relay.
 - Empty rooms are removed through repository-level conditional cleanup after successful leave-room operations. Leave/disconnect runtime cleanup uses prepared structured result/event data instead of rereading room state after mutation.
 - A standalone browser demo exists at `client_demo/index.html` for manual two-tab WebSocket/WSS signaling and peer-to-peer WebRTC media testing.
 
@@ -53,10 +53,12 @@ Application rules:
 
 Files: `include/buzzweb/net/`
 
-- `Server` owns IO context, TLS context, listener, dispatcher reference, and basic logging setup; the executable now owns `SessionRegistry` and passes it into the server/runtime event bridge.
-- `Listener` accepts TCP connections and creates sessions.
-- `Session` owns one TLS WebSocket connection, performs TLS and WebSocket handshakes, reads text frames, maps JSON envelopes to control messages, dispatches them, writes JSON responses, uses `SessionRegistry` for targeted signaling relay delivery, and logs close-path cleanup exceptions without breaking session shutdown.
-- `SessionRegistry` tracks active sessions by participant ID behind a mutex.
+- `Server` owns IO context, TLS context, listener, dispatcher reference, TLS-mode configuration, and basic logging setup; the executable owns `SessionRegistry` and passes it into the server/runtime event bridge.
+- `Listener` accepts TCP connections and creates `SslSession` when TLS is enabled or `PlainSession` when TLS is disabled.
+- `SessionBase` owns shared per-session state and behavior: participant identity, dispatcher/registry access, JSON control-message handling, registry cleanup, and the virtual `Start()`, `Send()`, and `Close()` interface.
+- `PlainSession` owns one plain WebSocket connection and starts directly with WebSocket accept.
+- `SslSession` owns one TLS WebSocket connection and performs TLS handshake before WebSocket accept.
+- `SessionRegistry` tracks active `SessionBase` instances by participant ID behind a mutex.
 
 Network rules:
 
@@ -64,20 +66,22 @@ Network rules:
 - Do not send microphone audio or video frames over WebSocket for the product MVP.
 - Treat SDP offers, SDP answers, and ICE candidates as opaque signaling payloads to relay; do not parse or terminate media in this server.
 - The network layer may use Boost.Asio, Boost.Beast, OpenSSL, and strings/JSON protocol data.
+- Keep control-message parsing and response/event handling shared in `SessionBase`; only handshake and lowest-layer close behavior should differ between plain WS and TLS WSS sessions.
 
 ## Intended Runtime Flow
 
-1. Server starts and configures logging and TLS.
+1. Server starts, configures logging, reads TLS mode, and configures TLS only when enabled.
 2. Listener accepts a TCP connection.
-3. Session performs TLS handshake and WebSocket accept.
-4. Session receives JSON control messages.
-5. ControlDispatcher parses/routes messages by type.
-6. RoomService performs room use cases and persists state through RoomRepository.
-7. ControlDispatcher returns structured responses for create, join, and leave room requests.
-8. Session sends JSON responses to clients.
-9. ControlDispatcher emits structured participant events through a callback; runtime wiring sends event JSON to recipients from the prepared participant list through `SessionRegistry`.
-10. For `offer`, `answer`, and `ice_candidate`, ControlDispatcher validates sender and target room membership, emits a `ControlRelay`, and Session runtime delivery sends the relay event to the target participant's active session.
-11. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
+3. Listener creates either `SslSession` or `PlainSession` based on TLS mode.
+4. `SslSession` performs TLS handshake then WebSocket accept; `PlainSession` starts directly with WebSocket accept.
+5. Session receives JSON control messages.
+6. ControlDispatcher parses/routes messages by type.
+7. RoomService performs room use cases and persists state through RoomRepository.
+8. ControlDispatcher returns structured responses for create, join, and leave room requests.
+9. Session sends JSON responses to clients.
+10. ControlDispatcher emits structured participant events through a callback; runtime wiring sends event JSON to recipients from the prepared participant list through `SessionRegistry`.
+11. For `offer`, `answer`, and `ice_candidate`, ControlDispatcher validates sender and target room membership, emits a `ControlRelay`, and Session runtime delivery sends the relay event to the target participant's active session.
+12. Clients use relayed offer/answer/ICE messages to establish WebRTC media directly; the server does not join the media path.
 
 Structured participant events and WebRTC offer/answer/ICE relay events exist. `participant_joined` carries the joined participant object and current participants list; `participant_left` carries the departed participant ID and remaining participants list.
 
@@ -173,7 +177,7 @@ Later options:
 
 ## Important Constraints
 
-- The current code has a runnable executable entry point wired to environment variables for TLS certificate path, private key path, and port.
+- The current code has a runnable executable entry point wired to environment variables for TLS mode, TLS certificate path, private key path, and port. TLS is default-on; plain WS is available for local/non-TLS deployments by disabling TLS explicitly.
 - Event payloads and runtime ownership should continue to be covered by typed results, logging, and protocol tests as they are added.
 - Keep media handling out of this server until there is an explicit feature decision to build an SFU or media relay.
 - For 1-to-1 calls, peer-to-peer WebRTC is enough for the intended MVP.

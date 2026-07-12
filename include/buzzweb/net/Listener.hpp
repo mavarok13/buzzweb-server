@@ -16,6 +16,7 @@ public:
         boost::asio::io_context& io_context,
         boost::asio::ssl::context& tls_context,
         boost::asio::ip::tcp::endpoint endpoint,
+        bool tls_enabled,
         app::ControlDispatcher& dispatcher,
         SessionRegistry& registry
     );
@@ -31,6 +32,7 @@ private:
     boost::asio::io_context& io_context_;
     boost::asio::ssl::context& tls_context_;
     boost::asio::ip::tcp::acceptor acceptor_;
+    bool tls_enabled_;
     app::ControlDispatcher& dispatcher_;
     SessionRegistry& registry_;
 };

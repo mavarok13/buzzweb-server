@@ -18,12 +18,15 @@ Server::Server(ServerConfig config, net::SessionRegistry& registry, app::Control
       dispatcher_(dispatcher)
 {
     ConfigureLogging();
-    ConfigureTls();
+    if (config_.tls_enabled) {
+        ConfigureTls();
+    }
 
     listener_ = std::make_unique<Listener>(
         io_context_,
         tls_context_,
         boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), config_.port),
+        config_.tls_enabled,
         dispatcher_,
         registry_
     );
@@ -34,7 +37,7 @@ Server::~Server() = default;
 void Server::Run()
 {
     listener_->Start();
-    BOOST_LOG_TRIVIAL(info) << "WSS server listening on port " << config_.port;
+    BOOST_LOG_TRIVIAL(info) << (config_.tls_enabled ? "WSS" : "WS") << " server listening on port " << config_.port;
     io_context_.run();
 }
 

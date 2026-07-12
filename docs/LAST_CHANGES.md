@@ -1,17 +1,18 @@
 # Last Changes
 
-Updated: 2026-07-12
+Updated: 2026-07-13
 
 ## Current Implementation Update
 
-- Participant event delivery now uses structured event data. `participant_joined` includes the joined participant object and current participants list; `participant_left` includes the departed participant ID and remaining participants list.
-- Runtime event delivery recipients come from the already prepared participant list rather than rereading the room after leave/disconnect.
-- `main.cpp` no longer rereads rooms after leave/disconnect just to build event recipients.
-- `RoomService::LeaveAllRooms()` swallows only expected `room_not_found` and `not_in_room` cleanup misses; unexpected errors still propagate.
-- `Session::RemoveFromRegistry()` logs cleanup exceptions and keeps the session close path from being broken by cleanup failures.
+- Networking now supports both default TLS WSS and explicit plain WS mode.
+- Runtime config includes `BUZZWEB_TLS_ENABLED`; `0`, `false`, and `FALSE` disable TLS, while TLS remains enabled by default.
+- Certificate and private-key environment variables are required only when TLS is enabled.
+- Sessions are split into shared `SessionBase` behavior plus transport-specific `PlainSession` and `SslSession` implementations.
+- `Listener` chooses `SslSession` or `PlainSession` per server TLS mode, and `SessionRegistry` stores `SessionBase` pointers for both modes.
 
 ## Latest Code History Summary
 
+- 2026-07-13: Added plain WS runtime mode and refactored session handling into shared base plus TLS/plain implementations.
 - 2026-07-12: Added structured participant event data and tightened leave/disconnect cleanup behavior.
 - 2026-07-11: Added standalone browser WebRTC signaling demo under `client_demo/`.
 - 2026-07-11: Added conditional empty-room cleanup and updated repository/runtime guidance.

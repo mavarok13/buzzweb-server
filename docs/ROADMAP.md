@@ -4,6 +4,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-07-13: Refactored network sessions into shared `SessionBase` plus `PlainSession` and `SslSession`, with `BUZZWEB_TLS_ENABLED` selecting plain WS or default WSS mode.
 - 2026-07-12: Added structured participant event data for joined/left events, avoided post-leave room rereads, tightened leave-all cleanup error handling, and made session registry removal cleanup log-and-continue.
 - 2026-07-11: Added a standalone browser WebRTC demo client for manual two-tab testing of the signaling relay and peer-to-peer audio/video.
 - 2026-07-11: Added conditional empty-room cleanup through `RoomRepository::RemoveIfEmpty()` and mapped leave-room missing participant errors to `not_in_room`.
@@ -28,8 +29,8 @@ This file tracks planned implementation work and architecture decisions for `buz
 - Implement the finalized initial JSON protocol schemas for `create_room`, `join_room`, and `leave_room`.
 - Implement `ControlDispatcher` as the JSON routing layer that parses payloads, creates `Participant` values when needed, and calls `RoomService`.
 - Map typed `RoomService` results to stable JSON response and error codes.
-- Refine the runnable executable/config layer around the existing library-level WSS server.
-- Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WSS.
+- Refine validation and documentation around runtime TLS/WS deployment modes.
+- Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WS/WSS.
 - Add basic 1-to-1 room capacity rules for the first calling MVP.
 - Add optional password verification flow.
 - Add basic logging for server lifecycle, sessions, room operations, and protocol errors.
@@ -48,7 +49,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 ## Deployment
 
 - Add runtime configuration through environment variables or config files.
-- Decide whether TLS is terminated inside the app or by a reverse proxy.
+- Decide production TLS topology: terminate inside the app with WSS, or run plain WS behind a trusted TLS-terminating reverse proxy.
 - Add `docker-compose.yml` for the signaling server and `coturn`.
 - Document required ports for WSS and STUN/TURN.
 - Add TURN/STUN URL configuration that can be advertised to clients.

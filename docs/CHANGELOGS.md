@@ -2,6 +2,15 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-07-13 - Plain WS And TLS Session Modes
+
+- Documented the session refactor from a single TLS-only `Session` into shared `SessionBase` plus transport-specific `PlainSession` and `SslSession`.
+- Documented that `SessionRegistry` stores `SessionBase` pointers so delivery works for both plain WS and TLS WSS sessions.
+- Documented `BUZZWEB_TLS_ENABLED` runtime behavior: TLS is enabled by default, and `0`, `false`, or `FALSE` disable TLS for plain WS mode.
+- Documented that certificate and private-key environment variables are required only when TLS is enabled, while `BUZZWEB_SERVER_PORT` applies to both modes.
+- Updated architecture, stack, info, roadmap, and agent guidance to describe WS/WSS server mode selection.
+- Verification: documentation inspection and scoped `git diff --check`.
+
 ## 2026-07-12 - Structured Participant Events And Cleanup
 
 - Updated participant-event handling guidance for the new `ControlEventData` shape with structured event data and prepared participant recipient lists.

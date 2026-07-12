@@ -185,146 +185,19 @@ std::optional<std::string> OptionalRequestId(const nlohmann::json& json)
 
 } // namespace
 
-Session::Session(
-    TcpSocket socket,
-    boost::asio::ssl::context& tls_context,
-    app::ControlDispatcher& dispatcher,
-    SessionRegistry& registry
-)
-    : websocket_(std::move(socket), tls_context),
-      dispatcher_(dispatcher),
+SessionBase::SessionBase(app::ControlDispatcher& dispatcher, SessionRegistry& registry)
+    : dispatcher_(dispatcher),
       registry_(registry),
       participant_id_(GenerateParticipantId())
 {
 }
 
-Session::~Session() = default;
-
-const domain::ParticipantId& Session::GetParticipantId() const
+const domain::ParticipantId& SessionBase::GetParticipantId() const
 {
     return participant_id_;
 }
 
-void Session::Start()
-{
-    auto self = shared_from_this();
-    websocket_.next_layer().async_handshake(
-        boost::asio::ssl::stream_base::server,
-        [self](boost::system::error_code error) {
-            self->OnTlsHandshake(error);
-        }
-    );
-}
-
-void Session::Send(std::string message)
-{
-    auto self = shared_from_this();
-    boost::asio::post(
-        websocket_.get_executor(),
-        [self, message = std::move(message)]() mutable {
-            const bool writing = !self->write_queue_.empty();
-            self->write_queue_.push_back(std::move(message));
-            if (!writing) {
-                self->DoWrite();
-            }
-        }
-    );
-}
-
-void Session::Close()
-{
-    auto self = shared_from_this();
-    boost::asio::post(
-        websocket_.get_executor(),
-        [self]() {
-            if (self->closing_) {
-                return;
-            }
-
-            self->closing_ = true;
-            self->RemoveFromRegistry();
-            if (self->websocket_.is_open()) {
-                self->websocket_.async_close(
-                    boost::beast::websocket::close_code::normal,
-                    [self](boost::system::error_code) {}
-                );
-                return;
-            }
-
-            boost::system::error_code ignored;
-            self->websocket_.next_layer().next_layer().close(ignored);
-        }
-    );
-}
-
-void Session::OnTlsHandshake(boost::system::error_code error)
-{
-    if (error) {
-        Fail(error);
-        return;
-    }
-
-    websocket_.text(true);
-    websocket_.set_option(boost::beast::websocket::stream_base::timeout::suggested(boost::beast::role_type::server));
-
-    auto self = shared_from_this();
-    websocket_.async_accept(
-        [self](boost::system::error_code accept_error) {
-            self->OnWebSocketAccept(accept_error);
-        }
-    );
-}
-
-void Session::OnWebSocketAccept(boost::system::error_code error)
-{
-    if (error) {
-        Fail(error);
-        return;
-    }
-
-    registry_.Add(shared_from_this());
-    registered_ = true;
-    ReadNext();
-}
-
-void Session::ReadNext()
-{
-    auto self = shared_from_this();
-    websocket_.async_read(
-        buffer_,
-        [self](boost::system::error_code error, std::size_t bytes_transferred) {
-            self->OnRead(error, bytes_transferred);
-        }
-    );
-}
-
-void Session::OnRead(boost::system::error_code error, std::size_t bytes_transferred)
-{
-    static_cast<void>(bytes_transferred);
-
-    if (error == boost::beast::websocket::error::closed) {
-        RemoveFromRegistry();
-        return;
-    }
-    if (error) {
-        Fail(error);
-        return;
-    }
-
-    auto message = boost::beast::buffers_to_string(buffer_.data());
-    buffer_.consume(buffer_.size());
-
-    if (!websocket_.got_text()) {
-        Send(SerializeError("error", std::nullopt, "invalid_message"));
-        ReadNext();
-        return;
-    }
-
-    HandleMessage(std::move(message));
-    ReadNext();
-}
-
-void Session::HandleMessage(std::string message)
+void SessionBase::HandleMessage(std::string message)
 {
     nlohmann::json json;
     try {
@@ -376,32 +249,12 @@ void Session::HandleMessage(std::string message)
     }
 }
 
-void Session::DoWrite()
+std::string SessionBase::InvalidMessageError() const
 {
-    if (write_queue_.empty() || closing_) {
-        return;
-    }
-
-    auto self = shared_from_this();
-    websocket_.async_write(
-        boost::asio::buffer(write_queue_.front()),
-        [self](boost::system::error_code error, std::size_t bytes_transferred) {
-            static_cast<void>(bytes_transferred);
-
-            if (error) {
-                self->Fail(error);
-                return;
-            }
-
-            self->write_queue_.pop_front();
-            if (!self->write_queue_.empty()) {
-                self->DoWrite();
-            }
-        }
-    );
+    return SerializeError("error", std::nullopt, "invalid_message");
 }
 
-void Session::RemoveFromRegistry()
+void SessionBase::RemoveFromRegistry()
 {
     if (!registered_) {
         return;
@@ -417,17 +270,43 @@ void Session::RemoveFromRegistry()
     }
 }
 
-void Session::Fail(boost::system::error_code error)
+PlainSession::PlainSession(TcpSocket socket, app::ControlDispatcher& dispatcher, SessionRegistry& registry)
+: Session(PlainWebSocketStream(std::move(socket)), dispatcher, registry) {
+}
+
+void PlainSession::Start() {
+    AcceptWebSocket();
+}
+
+void PlainSession::CloseLowestLayer(boost::system::error_code& error) {
+    websocket_.next_layer().close(error);
+}
+
+SslSession::SslSession(TcpSocket socket, boost::asio::ssl::context& tls_context, app::ControlDispatcher& dispatcher, SessionRegistry& registry)
+: Session(SslWebSocketStream(std::move(socket), tls_context), dispatcher, registry) {}
+
+void SslSession::Start() {
+    auto self = std::static_pointer_cast<SslSession>(shared_from_this());
+    websocket_.next_layer().async_handshake(
+        boost::asio::ssl::stream_base::server,
+        [self](boost::system::error_code error) {
+            self->OnTlsHandshake(error);
+        }
+    );
+}
+
+void SslSession::OnTlsHandshake(boost::system::error_code error)
 {
     if (error) {
-        BOOST_LOG_TRIVIAL(error) << "Session " << participant_id_ << " failed: " << error.message();
+        Fail(error);
+        return;
     }
 
-    closing_ = true;
-    RemoveFromRegistry();
+    AcceptWebSocket();
+}
 
-    boost::system::error_code ignored;
-    websocket_.next_layer().next_layer().close(ignored);
+void SslSession::CloseLowestLayer(boost::system::error_code& error) {
+    websocket_.next_layer().next_layer().close(error);
 }
 
 } // namespace buzzweb::net

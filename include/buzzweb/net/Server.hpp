@@ -17,6 +17,7 @@ struct ServerConfig {
     unsigned short port;
     std::string certificate_file;
     std::string private_key_file;
+    bool tls_enabled;
 };
 
 class Server {

@@ -10,8 +10,8 @@
 
 namespace buzzweb::net {
 
-class Session;
-using SessionPtr = std::shared_ptr<Session>;
+class SessionBase;
+using SessionPtr = std::shared_ptr<SessionBase>;
 
 class SessionRegistry {
 public:

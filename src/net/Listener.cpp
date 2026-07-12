@@ -14,12 +14,14 @@ Listener::Listener(
     boost::asio::io_context& io_context,
     boost::asio::ssl::context& tls_context,
     boost::asio::ip::tcp::endpoint endpoint,
+    bool tls_enabled,
     app::ControlDispatcher& dispatcher,
     SessionRegistry& registry
 )
     : io_context_(io_context),
       tls_context_(tls_context),
       acceptor_(io_context),
+      tls_enabled_(tls_enabled),
       dispatcher_(dispatcher),
       registry_(registry)
 {
@@ -79,7 +81,11 @@ void Listener::OnAccept(boost::system::error_code error, boost::asio::ip::tcp::s
         return;
     }
 
-    std::make_shared<Session>(std::move(socket), tls_context_, dispatcher_, registry_)->Start();
+    if (tls_enabled_) {
+        std::make_shared<SslSession>(std::move(socket), tls_context_, dispatcher_, registry_)->Start();
+    } else {
+        std::make_shared<PlainSession>(std::move(socket), dispatcher_, registry_)->Start();
+    }
     AcceptNext();
 }
 
