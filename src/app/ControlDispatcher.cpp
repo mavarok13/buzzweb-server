@@ -53,6 +53,29 @@ std::string RequiredString(const nlohmann::json& payload, const char* field)
     return payload.at(field).get<std::string>();
 }
 
+std::string RoomServiceErrorToCode(const ErrorType& type) {
+    switch(type) {
+        case ErrorType::RoomNotFound: {
+            return "room_not_found";
+        };
+        case ErrorType::WrongPassword: {
+            return "wrong_password";
+        };
+        case ErrorType::AlreadyJoined: {
+            return "already_joined";
+        };
+        case ErrorType::NotInRoom: {
+            return "not_in_room";
+        };
+        case ErrorType::ParticipantUnavailable: {
+            return "participant_unavailable";
+        };
+        default: {
+            return "internal_error";
+        };
+    }
+}
+
 std::string ErrorMessage(const std::string& code)
 {
     if (code == "missing_field") {
@@ -156,19 +179,53 @@ void ControlDispatcher::Dispatch(
         if (message.type == ControlMessageType::CreateRoom) {
             auto display_name = RequiredString(message.payload, "display_name");
             auto password = OptionalString(message.payload, "password");
-            auto room = room_service_.CreateRoom(password);
-            domain::Participant participant(participant_id, std::move(display_name));
-            auto joined_room = room_service_.JoinRoom(room.GetCode(), participant, password);
+            auto create_room_result = room_service_.CreateRoom(password);
 
-            send(SuccessResponse(
-                response_type,
-                message.request_id,
-                {
-                    {"room_code", joined_room.room_code},
-                    {"participant", ParticipantToJson(participant)},
-                    {"participants", ParticipantsToJson(joined_room.room_participants)}
-                }
-            ));
+            if (!create_room_result.IsOk()) {
+                std::string code = RoomServiceErrorToCode(create_room_result.Error().type);
+
+                send(
+                    ErrorResponse(
+                        response_type,
+                        message.request_id,
+                        code
+                    )
+                );
+
+                return;
+            }
+
+            domain::Room room = create_room_result.Value();
+
+            domain::Participant participant(participant_id, std::move(display_name));
+            auto joined_room_result = room_service_.JoinRoom(room.GetCode(), participant, password);
+
+            if (joined_room_result.IsOk()) {
+                auto joined_room = joined_room_result.Value();
+                send(SuccessResponse(
+                        response_type,
+                        message.request_id,
+                        {
+                            {"room_code", joined_room.room_code},
+                            {"participant", ParticipantToJson(participant)},
+                            {"participants", ParticipantsToJson(joined_room.room_participants)}
+                        }
+                    )
+                );
+            } else {
+                std::string code = RoomServiceErrorToCode(joined_room_result.Error().type);
+
+                send(
+                    ErrorResponse(
+                        response_type,
+                        message.request_id,
+                        code
+                    )
+                );
+
+                return;
+            }
+            
             return;
         }
 
@@ -177,34 +234,66 @@ void ControlDispatcher::Dispatch(
             auto display_name = RequiredString(message.payload, "display_name");
             auto password = OptionalString(message.payload, "password");
             domain::Participant participant(participant_id, std::move(display_name));
-            auto join_room_event = room_service_.JoinRoom(room_code, participant, std::move(password));
+            auto join_room_result = room_service_.JoinRoom(room_code, participant, std::move(password));
 
-            send(SuccessResponse(
-                response_type,
-                message.request_id,
-                {
-                    {"room_code", room_code},
-                    {"participant", ParticipantToJson(participant)},
-                    {"participants", ParticipantsToJson(join_room_event.room_participants)}
-                }
-            ));
-            event_handler_(
-                BuildControlJoinedEventData(room_code, participant, join_room_event.room_participants),
-                join_room_event.room_participants
-            );
+            if (join_room_result.IsOk()) {
+                auto join_room = join_room_result.Value();
+
+                send(SuccessResponse(
+                        response_type,
+                        message.request_id,
+                        {
+                            {"room_code", room_code},
+                            {"participant", ParticipantToJson(participant)},
+                            {"participants", ParticipantsToJson(join_room.room_participants)}
+                        }
+                    )
+                );
+                event_handler_(
+                    BuildControlJoinedEventData(room_code, participant, join_room.room_participants),
+                    join_room.room_participants
+                );
+            } else {
+                std::string code = RoomServiceErrorToCode(join_room_result.Error().type);
+
+                send(ErrorResponse(
+                        response_type,
+                        message.request_id,
+                        code
+                    )
+                );
+
+                return;
+            }
             
             return;
         }
 
         if (message.type == ControlMessageType::LeaveRoom) {
             auto room_code = RequiredString(message.payload, "room_code");
-            auto left_room_event = room_service_.LeaveRoom(room_code, participant_id);
+            auto left_room_result = room_service_.LeaveRoom(room_code, participant_id);
 
-            send(SuccessResponse(response_type, message.request_id, {{"room_code", room_code}}));
-            event_handler_(
-                BuildControlLeftEventData(room_code, participant_id, left_room_event.remaining_participants),
-                left_room_event.remaining_participants
-            );
+            if (left_room_result.IsOk()) {
+                auto left_room = left_room_result.Value();
+
+                send(SuccessResponse(response_type, message.request_id, {{"room_code", room_code}}));
+                event_handler_(
+                    BuildControlLeftEventData(room_code, participant_id, left_room.remaining_participants),
+                    left_room.remaining_participants
+                );
+            } else {
+                std::string code = RoomServiceErrorToCode(left_room_result.Error().type);
+
+                send(ErrorResponse(
+                        response_type,
+                        message.request_id,
+                        code
+                    )
+                );
+
+                return;
+            }
+            
             return;
         }
 
@@ -252,13 +341,17 @@ void ControlDispatcher::Dispatch(
 }
 
 void ControlDispatcher::HandleParticipantDisconnected(const domain::ParticipantId& participant_id) {
-    auto left_room_events = room_service_.LeaveAllRooms(participant_id);
+    auto left_room_results = room_service_.LeaveAllRooms(participant_id);
 
-    for (const auto& left_room_event : left_room_events) {
-        domain::RoomCode room_code = left_room_event.room_code;
+    for (const auto& left_room_result : left_room_results) {
+        if (!left_room_result.IsOk()) {
+            continue;
+        }
+        auto left_room = left_room_result.Value();
+        domain::RoomCode room_code = left_room.room_code;
         event_handler_(
-            BuildControlLeftEventData(room_code, participant_id, left_room_event.remaining_participants),
-            left_room_event.remaining_participants
+            BuildControlLeftEventData(room_code, participant_id, left_room.remaining_participants),
+            left_room.remaining_participants
         );
     }
 }

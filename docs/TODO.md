@@ -1,7 +1,11 @@
 # 📝 TO DO 📝
 
 ## Near tasks
-❌ Complete event JSON shape: add remaining participants
+✅ Add result struct with variant for room repository. Adapt RoomService, ControlDispatcher for this
+
+❌ Move JSON protocol codec from Session and ControlDispatcher in separated class
+
+✅ Complete event JSON shape: add remaining participants
 
 ❌ src/app/ControlDispatcher.cpp:205-210, 220-225: если event_handler_ бросит после send(SuccessResponse(...)), dispatcher поймает исключение внешним catch и может отправить второй response на тот же request_id.
 Сейчас это маловероятно, потому что main.cpp больше не ходит в GetRoomParticipants(), но архитектурно риск остался. Лучше event delivery ошибки не должны превращать успешный leave_room/join_room в второй ответ. Можно позже обернуть event handler отдельно.
@@ -10,11 +14,11 @@
 
 ❌ One args order for repository, service: room_code, participant_id, etc. `bool ParticipantInRoom(const domain::ParticipantId& participant_id, const domain::RoomCode& room_code) const;`
 
-❌ Move args of `ControlEventHandler` in struct `ControlEvent`
+✅ Move args of `ControlEventHandler` in struct `ControlEvent`
 
 ❌ All in unity form: room -> room_code, id (participant) -> participant_id, etc
 
-❌ Make a choice
+✅ Make a choice
 ```
 struct ParticipantLeftRoom {
         domain::RoomCode room_code;

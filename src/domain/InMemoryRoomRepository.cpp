@@ -8,19 +8,21 @@ InMemoryRoomRepository::InMemoryRoomRepository() = default;
 
 InMemoryRoomRepository::~InMemoryRoomRepository() = default;
 
-RoomRepositoryResult BuildSuccessRoomRepositoryResult(RoomCode code)
+RoomRepositoryResult BuildSuccessRoomRepositoryResult(RoomCode code, RoomRepositoryResult::Result result)
 {
     return RoomRepositoryResult{
         .type = RoomRepositoryResult::Type::Success,
+        .result = result,
         .message = "success",
         .room_code = std::move(code)
     };
 }
 
-RoomRepositoryResult BuildFailedRoomRepositoryResult(std::string message, RoomCode code)
+RoomRepositoryResult BuildFailedRoomRepositoryResult(std::string message, RoomCode code, RoomRepositoryResult::Result result)
 {
     return RoomRepositoryResult{
         .type = RoomRepositoryResult::Type::Failed,
+        .result = result,
         .message = std::move(message),
         .room_code = std::move(code)
     };
@@ -33,10 +35,10 @@ RoomRepositoryResult InMemoryRoomRepository::Add(Room room)
     auto code = room.GetCode();
     auto [_, inserted] = rooms_.emplace(code, std::move(room));
     if (!inserted) {
-        return BuildFailedRoomRepositoryResult("room_already_exists", std::move(code));
+        return BuildFailedRoomRepositoryResult("room_already_exists", std::move(code), RoomRepositoryResult::Result::RoomAlreadyExists);
     }
 
-    return BuildSuccessRoomRepositoryResult(std::move(code));
+    return BuildSuccessRoomRepositoryResult(std::move(code), RoomRepositoryResult::RoomAdded);
 }
 
 std::optional<Room> InMemoryRoomRepository::FindByCode(const RoomCode& code) const
@@ -60,21 +62,21 @@ RoomRepositoryResult InMemoryRoomRepository::Update(
 
     auto room = rooms_.find(code);
     if (room == rooms_.end()) {
-        return BuildFailedRoomRepositoryResult("room_not_found", code);
+        return BuildFailedRoomRepositoryResult("room_not_found", code, RoomRepositoryResult::RoomNotFound);
     }
 
     auto updated_room = room->second;
     auto result = updater(updated_room);
     if (result == RoomRepositoryDecision::Abort) {
-        return BuildFailedRoomRepositoryResult("update_aborted", code);
+        return BuildFailedRoomRepositoryResult("update_aborted", code, RoomRepositoryResult::UpdateAborted);
     }
 
     room->second = std::move(updated_room);
     if (result == RoomRepositoryDecision::Commit) {
-        return BuildSuccessRoomRepositoryResult(code);
+        return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomUpdated);
     }
 
-    return BuildFailedRoomRepositoryResult("update_failed", code);
+    return BuildFailedRoomRepositoryResult("update_failed", code, RoomRepositoryResult::UpdateFailed);
 }
 
 RoomRepositoryResult InMemoryRoomRepository::Remove(const RoomCode& code)
@@ -82,10 +84,10 @@ RoomRepositoryResult InMemoryRoomRepository::Remove(const RoomCode& code)
     std::lock_guard lock(mutex_);
 
     if (rooms_.erase(code) == 0) {
-        return BuildFailedRoomRepositoryResult("room_not_found", code);
+        return BuildFailedRoomRepositoryResult("room_not_found", code, RoomRepositoryResult::RoomNotFound);
     }
 
-    return BuildSuccessRoomRepositoryResult(code);
+    return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomRemoved);
 }
 
 RoomRepositoryResult InMemoryRoomRepository::RemoveIfEmpty(const RoomCode& code)
@@ -94,15 +96,15 @@ RoomRepositoryResult InMemoryRoomRepository::RemoveIfEmpty(const RoomCode& code)
 
     auto room = rooms_.find(code);
     if (room == rooms_.end()) {
-        return BuildSuccessRoomRepositoryResult(code);
+        return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomNotFound);
     }
 
     if (room->second.IsEmpty()) {
         rooms_.erase(room);
-        return BuildSuccessRoomRepositoryResult(code);
+        return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomRemoved);
     }
 
-    return BuildSuccessRoomRepositoryResult(code);
+    return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::None);
 }
 
 bool InMemoryRoomRepository::Exists(const RoomCode& code) const

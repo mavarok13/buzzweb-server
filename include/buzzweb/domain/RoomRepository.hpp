@@ -17,7 +17,19 @@ public:
         Failed
     };
 
+    enum Result {
+        RoomAdded,
+        RoomUpdated,
+        RoomRemoved,
+        RoomAlreadyExists,
+        RoomNotFound,
+        UpdateAborted,
+        UpdateFailed,
+        None
+    };
+
     Type type;
+    Result result;
     std::string message;
     std::optional<RoomCode> room_code;
 };
