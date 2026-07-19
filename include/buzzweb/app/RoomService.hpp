@@ -11,21 +11,21 @@
 
 namespace buzzweb::app {
 
-enum ErrorType {
-    WrongPassword,
-    RoomNotFound,
-    RoomCodeGenerationFailed,
-    ParticipantUnavailable,
-    NotInRoom,
-    AlreadyJoined,
-    RoomAlreadyExists,
-    InternalError,
-    UnknownError
-};
-
-struct Error {
+struct RoomServiceError {
 public:
-    ErrorType type;
+    enum Type {
+        WrongPassword,
+        RoomNotFound,
+        RoomCodeGenerationFailed,
+        ParticipantUnavailable,
+        NotInRoom,
+        AlreadyJoined,
+        RoomAlreadyExists,
+        PasswordNotProvided,
+        InternalError
+    };
+
+    Type type;
     std::string msg;
 };
 
@@ -40,11 +40,11 @@ struct ParticipantLeftRoom {
     std::vector<domain::Participant> remaining_participants;
 };
 
-using ParticipantJoinedRoomResult = Result<ParticipantJoinedRoom, Error>;
-using ParticipantLeftRoomResult = Result<ParticipantLeftRoom, Error>;
+using ParticipantJoinedRoomResult = Result<ParticipantJoinedRoom, RoomServiceError>;
+using ParticipantLeftRoomResult = Result<ParticipantLeftRoom, RoomServiceError>;
 using ParticipantsLeftRoomResults = std::vector<ParticipantLeftRoomResult>;
-using CreateRoomResult = Result<domain::Room, Error>;
-using GetParticipantsResult = Result<std::vector<domain::Participant>, Error>;
+using CreateRoomResult = Result<domain::Room, RoomServiceError>;
+using GetParticipantsResult = Result<std::vector<domain::Participant>, RoomServiceError>;
 
 class RoomService {
 public:
@@ -60,7 +60,6 @@ public:
     ParticipantLeftRoomResult LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id);
     ParticipantsLeftRoomResults LeaveAllRooms(const domain::ParticipantId& participant_id);
     GetParticipantsResult GetRoomParticipants(const domain::RoomCode& code) const;
-    bool ParticipantInRoom(const domain::ParticipantId& participant_id, const domain::RoomCode& room_code) const;
 
 private:
     domain::RoomRepositoryPtr repository_;

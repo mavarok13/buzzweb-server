@@ -12,13 +12,12 @@ public:
     InMemoryRoomRepository();
     ~InMemoryRoomRepository() override;
 
-    RoomRepositoryResult Add(Room room) override;
-    std::optional<Room> FindByCode(const RoomCode& code) const override;
-    RoomRepositoryResult Update(const RoomCode& code, std::function<RoomRepositoryDecision(Room&)> updater) override;
-    RoomRepositoryResult Remove(const RoomCode& code) override;
-    RoomRepositoryResult RemoveIfEmpty(const RoomCode& code) override;
-    bool Exists(const RoomCode& code) const override;
-    bool ParticipantInRoom(const ParticipantId& participant_id, const RoomCode& room_code) const override;
+    AddRoomResult Add(Room room) override;
+    std::optional<Room> FindByCode(const RoomCode& room_code) const override;
+    UpdateRoomResult Update(const RoomCode& room_code, std::function<TransactionResult(Room&)> updater) override;
+    RemoveRoomResult Remove(const RoomCode& room_code) override;
+    RemoveEmptyRoomResult RemoveIfEmpty(const RoomCode& room_code) override;
+    bool Exists(const RoomCode& room_code) const override;
     std::vector<RoomCode> GetRoomCodes() const override;
 
 private:

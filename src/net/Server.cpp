@@ -1,9 +1,5 @@
 #include "buzzweb/net/Server.hpp"
 
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/ssl/context.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
 #include <boost/log/trivial.hpp>
 #include <memory>
 #include <utility>
@@ -17,7 +13,6 @@ Server::Server(ServerConfig config, net::SessionRegistry& registry, app::Control
       registry_(registry),
       dispatcher_(dispatcher)
 {
-    ConfigureLogging();
     if (config_.tls_enabled) {
         ConfigureTls();
     }
@@ -60,11 +55,6 @@ void Server::ConfigureTls()
     );
     tls_context_.use_certificate_chain_file(config_.certificate_file);
     tls_context_.use_private_key_file(config_.private_key_file, boost::asio::ssl::context::pem);
-}
-
-void Server::ConfigureLogging()
-{
-    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
 }
 
 } // namespace buzzweb::net

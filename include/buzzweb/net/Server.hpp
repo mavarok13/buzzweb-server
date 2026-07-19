@@ -6,8 +6,7 @@
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl/context.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/trivial.hpp>
+
 #include <memory>
 #include <string>
 
@@ -30,7 +29,6 @@ public:
 
 private:
     void ConfigureTls();
-    void ConfigureLogging();
 
     ServerConfig config_;
     boost::asio::io_context io_context_;
@@ -38,7 +36,6 @@ private:
     SessionRegistry& registry_;
     app::ControlDispatcher& dispatcher_;
     std::unique_ptr<Listener> listener_;
-    boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger_;
 };
 
 } // namespace buzzweb::net

@@ -2,8 +2,14 @@
 #include <memory>
 #include <cstdlib>
 #include <stdexcept>
+#include <mutex>
 
 #include <nlohmann/json.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/console.hpp>
 
 #include "buzzweb/domain/InMemoryRoomRepository.hpp"
 #include "buzzweb/app/RoomService.hpp"
@@ -12,19 +18,34 @@
 #include "buzzweb/net/Session.hpp"
 #include "util/Config.hpp"
 
+void ConfigureLogging() {
+    static std::once_flag configured;
+
+    std::call_once(configured, [] {
+        boost::log::add_console_log(std::clog);
+        boost::log::add_common_attributes();
+
+        boost::log::core::get()->set_filter(
+            boost::log::trivial::severity >= boost::log::trivial::info
+        );
+    });
+}
+
 int main () {
+    ConfigureLogging();
+
     buzzweb::net::ServerConfig config;
 
-    std::cout << "[INFO] Loading config..." << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Loading config...";
     try {
         config = LoadConfig();
     } catch (const std::exception & ex) {
-        std::cerr << "[ERROR] Couldn't load config: " << ex.what() << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Couldn't load config: " << ex.what();
         return EXIT_FAILURE;
     }
-    std::cout << "[INFO] Config loaded!" << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Config loaded!";
 
-    std::cout << "[INFO] Starting BuzzWeb Server..." << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Starting BuzzWeb Server...";
 
     auto repository = std::make_shared<buzzweb::domain::InMemoryRoomRepository>();
     buzzweb::app::RoomService room_service(repository);

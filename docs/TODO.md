@@ -1,7 +1,7 @@
 # 📝 TO DO 📝
 
 ## Near tasks
-✅ Add result struct with variant for room repository. Adapt RoomService, ControlDispatcher for this
+❌ Add result struct with variant for room repository. Adapt RoomService, ControlDispatcher for this
 
 ❌ Move JSON protocol codec from Session and ControlDispatcher in separated class
 

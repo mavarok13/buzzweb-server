@@ -8,44 +8,24 @@ InMemoryRoomRepository::InMemoryRoomRepository() = default;
 
 InMemoryRoomRepository::~InMemoryRoomRepository() = default;
 
-RoomRepositoryResult BuildSuccessRoomRepositoryResult(RoomCode code, RoomRepositoryResult::Result result)
-{
-    return RoomRepositoryResult{
-        .type = RoomRepositoryResult::Type::Success,
-        .result = result,
-        .message = "success",
-        .room_code = std::move(code)
-    };
-}
-
-RoomRepositoryResult BuildFailedRoomRepositoryResult(std::string message, RoomCode code, RoomRepositoryResult::Result result)
-{
-    return RoomRepositoryResult{
-        .type = RoomRepositoryResult::Type::Failed,
-        .result = result,
-        .message = std::move(message),
-        .room_code = std::move(code)
-    };
-}
-
-RoomRepositoryResult InMemoryRoomRepository::Add(Room room)
+AddRoomResult InMemoryRoomRepository::Add(Room room)
 {
     std::lock_guard lock(mutex_);
 
-    auto code = room.GetCode();
-    auto [_, inserted] = rooms_.emplace(code, std::move(room));
+    auto room_code = room.GetCode();
+    auto [_, inserted] = rooms_.emplace(room_code, std::move(room));
     if (!inserted) {
-        return BuildFailedRoomRepositoryResult("room_already_exists", std::move(code), RoomRepositoryResult::Result::RoomAlreadyExists);
+        return AddRoomResult::AlreadyExists;
     }
 
-    return BuildSuccessRoomRepositoryResult(std::move(code), RoomRepositoryResult::RoomAdded);
+    return AddRoomResult::Added;
 }
 
-std::optional<Room> InMemoryRoomRepository::FindByCode(const RoomCode& code) const
+std::optional<Room> InMemoryRoomRepository::FindByCode(const RoomCode& room_code) const
 {
     std::lock_guard lock(mutex_);
 
-    auto room = rooms_.find(code);
+    auto room = rooms_.find(room_code);
     if (room == rooms_.end()) {
         return std::nullopt;
     }
@@ -53,64 +33,60 @@ std::optional<Room> InMemoryRoomRepository::FindByCode(const RoomCode& code) con
     return room->second;
 }
 
-RoomRepositoryResult InMemoryRoomRepository::Update(
-    const RoomCode& code,
-    std::function<RoomRepositoryDecision(Room&)> updater
+UpdateRoomResult InMemoryRoomRepository::Update(
+    const RoomCode& room_code,
+    std::function<TransactionResult(Room&)> updater
 )
 {
     std::lock_guard lock(mutex_);
 
-    auto room = rooms_.find(code);
+    auto room = rooms_.find(room_code);
     if (room == rooms_.end()) {
-        return BuildFailedRoomRepositoryResult("room_not_found", code, RoomRepositoryResult::RoomNotFound);
+        return UpdateRoomResult::NotFound;
     }
 
     auto updated_room = room->second;
     auto result = updater(updated_room);
-    if (result == RoomRepositoryDecision::Abort) {
-        return BuildFailedRoomRepositoryResult("update_aborted", code, RoomRepositoryResult::UpdateAborted);
+    if (result == TransactionResult::Abort) {
+        return UpdateRoomResult::Aborted;
     }
 
     room->second = std::move(updated_room);
-    if (result == RoomRepositoryDecision::Commit) {
-        return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomUpdated);
-    }
-
-    return BuildFailedRoomRepositoryResult("update_failed", code, RoomRepositoryResult::UpdateFailed);
+    return UpdateRoomResult::Updated;
 }
 
-RoomRepositoryResult InMemoryRoomRepository::Remove(const RoomCode& code)
+RemoveRoomResult InMemoryRoomRepository::Remove(const RoomCode& room_code)
 {
     std::lock_guard lock(mutex_);
 
-    if (rooms_.erase(code) == 0) {
-        return BuildFailedRoomRepositoryResult("room_not_found", code, RoomRepositoryResult::RoomNotFound);
+    if (rooms_.erase(room_code) == 0) {
+        return RemoveRoomResult::NotFound;
     }
 
-    return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomRemoved);
+    return RemoveRoomResult::Removed;
 }
 
-RoomRepositoryResult InMemoryRoomRepository::RemoveIfEmpty(const RoomCode& code)
+RemoveEmptyRoomResult InMemoryRoomRepository::RemoveIfEmpty(const RoomCode& room_code)
 {
     std::lock_guard lock(mutex_);
 
-    auto room = rooms_.find(code);
+    auto room = rooms_.find(room_code);
     if (room == rooms_.end()) {
-        return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomNotFound);
+        return RemoveEmptyRoomResult::NotFound;
     }
 
     if (room->second.IsEmpty()) {
         rooms_.erase(room);
-        return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::RoomRemoved);
+        return RemoveEmptyRoomResult::Removed;
     }
 
-    return BuildSuccessRoomRepositoryResult(code, RoomRepositoryResult::None);
+    return RemoveEmptyRoomResult::NotEmpty;
 }
 
-bool InMemoryRoomRepository::Exists(const RoomCode& code) const
+bool InMemoryRoomRepository::Exists(const RoomCode& room_code) const
 {
     std::lock_guard lock(mutex_);
-    return rooms_.contains(code);
+    return rooms_.contains(room_code);
 }
 
 std::vector<RoomCode> InMemoryRoomRepository::GetRoomCodes() const
@@ -119,22 +95,11 @@ std::vector<RoomCode> InMemoryRoomRepository::GetRoomCodes() const
 
     std::vector<RoomCode> codes;
     codes.reserve(rooms_.size());
-    for (const auto& [code, _] : rooms_) {
-        codes.push_back(code);
+    for (const auto& [room_code, _] : rooms_) {
+        codes.push_back(room_code);
     }
 
     return codes;
-}
-
-bool InMemoryRoomRepository::ParticipantInRoom(const ParticipantId& participant_id, const RoomCode& room_code) const {
-    std::lock_guard lock(mutex_);
-
-    auto room = rooms_.find(room_code);
-    if (room == rooms_.end()) {
-        throw std::runtime_error("room_not_found");
-    }
-
-    return room->second.HasParticipant(participant_id);
 }
 
 } // namespace buzzweb::domain
