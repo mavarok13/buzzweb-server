@@ -1,14 +1,13 @@
 # 📝 TO DO 📝
 
 ## Near tasks
-✅ Add result struct with variant for room repository. Adapt RoomService, ControlDispatcher for this
+❌ Add result struct with variant for room repository. Adapt RoomService, ControlDispatcher for this
 
-❌ Move JSON protocol codec from Session and ControlDispatcher in separated class
+✅ Move JSON protocol codec from Session and ControlDispatcher into a separate codec
 
 ✅ Complete event JSON shape: add remaining participants
 
-❌ src/app/ControlDispatcher.cpp:205-210, 220-225: если event_handler_ бросит после send(SuccessResponse(...)), dispatcher поймает исключение внешним catch и может отправить второй response на тот же request_id.
-Сейчас это маловероятно, потому что main.cpp больше не ходит в GetRoomParticipants(), но архитектурно риск остался. Лучше event delivery ошибки не должны превращать успешный leave_room/join_room в второй ответ. Можно позже обернуть event handler отдельно.
+✅ Event delivery отделён от dispatcher response handling и больше не может породить второй ответ на тот же request_id
 
 ✅ Add exception handler for `RoomService::LeaveAllRooms`
 
@@ -27,7 +26,7 @@ struct ParticipantLeftRoom {
     };
 ```
 
-❌ Fix this shit
+✅ Move runtime event delivery from main.cpp into SessionBase
 ```
 buzzweb::app::ControlDispatcher dispatcher(room_service, [&room_service, &registry] (const buzzweb::app::ControlEventData& event, const std::vector<buzzweb::domain::Participant>& participants) {
         for (const auto participant : participants) {

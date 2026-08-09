@@ -44,6 +44,7 @@ protected:
 
     void RemoveFromRegistry();
     void HandleMessage(std::string message);
+    void DeliverEvents(const std::vector<app::ControlDispatcherEvent>& events);
     std::string InvalidMessageError() const;
 
     app::ControlDispatcher& dispatcher_;

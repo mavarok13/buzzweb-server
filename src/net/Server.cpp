@@ -1,23 +1,19 @@
 #include "buzzweb/net/Server.hpp"
 
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/ssl/context.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
 #include <boost/log/trivial.hpp>
 #include <memory>
 #include <utility>
 
 namespace buzzweb::net {
 
-Server::Server(ServerConfig config, net::SessionRegistry& registry, app::ControlDispatcher& dispatcher)
+Server::Server(ServerConfig config, net::SessionRegistry& registry, app::RoomService& room_service)
     : config_(std::move(config)),
       io_context_(1),
       tls_context_(boost::asio::ssl::context::tlsv12_server),
       registry_(registry),
-      dispatcher_(dispatcher)
+      room_service_(room_service),
+      dispatcher_(room_service_)
 {
-    ConfigureLogging();
     if (config_.tls_enabled) {
         ConfigureTls();
     }
@@ -60,11 +56,6 @@ void Server::ConfigureTls()
     );
     tls_context_.use_certificate_chain_file(config_.certificate_file);
     tls_context_.use_private_key_file(config_.private_key_file, boost::asio::ssl::context::pem);
-}
-
-void Server::ConfigureLogging()
-{
-    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
 }
 
 } // namespace buzzweb::net

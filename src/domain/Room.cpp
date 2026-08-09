@@ -6,8 +6,8 @@
 
 namespace buzzweb::domain {
 
-Room::Room(RoomCode code, std::optional<std::string> password_hash)
-    : code_(std::move(code)), password_hash_(std::move(password_hash))
+Room::Room(RoomCode code, std::optional<RoomSecret> room_secret)
+    : code_(std::move(code)), room_secret_(std::move(room_secret))
 {
 }
 
@@ -18,14 +18,9 @@ const RoomCode& Room::GetCode() const
     return code_;
 }
 
-const std::optional<std::string>& Room::GetPasswordHash() const
+bool Room::IsSecretProtected() const
 {
-    return password_hash_;
-}
-
-bool Room::IsPasswordProtected() const
-{
-    return password_hash_.has_value();
+    return room_secret_.has_value();
 }
 
 bool Room::IsEmpty() const
@@ -33,17 +28,30 @@ bool Room::IsEmpty() const
     return participants_.empty();
 }
 
-void Room::AddParticipant(const Participant& participant)
+JoinRoomResult Room::TryAddParticipant(const Participant& participant, std::optional<RoomSecret> room_secret)
 {
     if (HasParticipant(participant.GetId())) {
-        throw std::invalid_argument("participant_already_exists");
+        return JoinRoomResult::AlreadyInRoom;
+    }
+    if (room_secret_) {
+        if (!room_secret) {
+            return JoinRoomResult::SecretNotProvided;
+        }
+        if (*room_secret_ != *room_secret) {
+            return JoinRoomResult::InvalidSecret; 
+        }
     }
 
     participants_.push_back(participant);
+    return JoinRoomResult::Joined;
 }
 
-void Room::RemoveParticipant(const ParticipantId& participant_id)
+LeaveRoomResult Room::RemoveParticipant(const ParticipantId& participant_id)
 {
+    if (!HasParticipant(participant_id)) {
+        return LeaveRoomResult::NotInRoom;
+    }
+    
     participants_.erase(
         std::remove_if(
             participants_.begin(),
@@ -54,6 +62,8 @@ void Room::RemoveParticipant(const ParticipantId& participant_id)
         ),
         participants_.end()
     );
+
+    return LeaveRoomResult::Left;
 }
 
 bool Room::HasParticipant(const ParticipantId& participant_id) const

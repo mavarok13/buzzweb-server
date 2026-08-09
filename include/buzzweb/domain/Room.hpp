@@ -9,19 +9,30 @@
 namespace buzzweb::domain {
 
 using RoomCode = std::string;
+using RoomSecret = std::string;
+
+enum JoinRoomResult {
+    Joined,
+    InvalidSecret,
+    SecretNotProvided,
+    AlreadyInRoom
+};
+enum LeaveRoomResult {
+    Left,
+    NotInRoom
+};
 
 class Room {
 public:
-    Room(RoomCode code, std::optional<std::string> password_hash);
+    Room(RoomCode code, std::optional<RoomSecret> room_secret = std::nullopt);
     ~Room();
 
     const RoomCode& GetCode() const;
-    const std::optional<std::string>& GetPasswordHash() const;
-    bool IsPasswordProtected() const;
+    bool IsSecretProtected() const;
     bool IsEmpty() const;
 
-    void AddParticipant(const Participant& participant);
-    void RemoveParticipant(const ParticipantId& participant_id);
+    JoinRoomResult TryAddParticipant(const Participant& participant, std::optional<RoomSecret> room_secret);
+    LeaveRoomResult RemoveParticipant(const ParticipantId& participant_id);
     bool HasParticipant(const ParticipantId& participant_id) const;
     Participant & FindParticipant(const ParticipantId& participant_id);
     const Participant FindParticipant(const ParticipantId& participant_id) const;
@@ -29,7 +40,7 @@ public:
 
 private:
     RoomCode code_;
-    std::optional<std::string> password_hash_;
+    std::optional<RoomSecret> room_secret_;
     std::vector<Participant> participants_;
 };
 

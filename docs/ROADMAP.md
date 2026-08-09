@@ -4,6 +4,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 
 ## Completed Decisions
 
+- 2026-08-09: Completed the typed protocol refactor by separating JSON request/response/event encoding into `ProtocolCodec`, restoring session delivery and disconnect cleanup, and making `Server` own one dispatcher.
 - 2026-07-13: Refactored network sessions into shared `SessionBase` plus `PlainSession` and `SslSession`, with `BUZZWEB_TLS_ENABLED` selecting plain WS or default WSS mode.
 - 2026-07-12: Added structured participant event data for joined/left events, avoided post-leave room rereads, tightened leave-all cleanup error handling, and made session registry removal cleanup log-and-continue.
 - 2026-07-11: Added a standalone browser WebRTC demo client for manual two-tab testing of the signaling relay and peer-to-peer audio/video.
@@ -27,7 +28,7 @@ This file tracks planned implementation work and architecture decisions for `buz
 ## MVP Signaling
 
 - Implement the finalized initial JSON protocol schemas for `create_room`, `join_room`, and `leave_room`.
-- Implement `ControlDispatcher` as the JSON routing layer that parses payloads, creates `Participant` values when needed, and calls `RoomService`.
+- Keep `ProtocolCodec` as the JSON boundary and `ControlDispatcher` as the typed application routing layer.
 - Map typed `RoomService` results to stable JSON response and error codes.
 - Refine validation and documentation around runtime TLS/WS deployment modes.
 - Keep `create_room`, `join_room`, and `leave_room` direct response flow working over WS/WSS.
