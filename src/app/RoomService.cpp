@@ -58,7 +58,7 @@ RoomService::RoomService(domain::RoomRepositoryPtr repository)
 
 RoomService::~RoomService() = default;
 
-CreateRoomResult RoomService::CreateRoom(std::optional<std::string> password)
+CreateRoomResult RoomService::CreateRoom(std::optional<domain::RoomSecret> password)
 {
     constexpr int max_attempts = 100;
 
@@ -154,7 +154,6 @@ ParticipantLeftRoomResult RoomService::LeaveRoom(const domain::RoomCode& room_co
         }
     } catch (const std::exception& ex) {
         BOOST_LOG_TRIVIAL(error) << "Leaving room(" << room_code << ") failed: " << ex.what();
-        return ParticipantLeftRoomResult::Err(BuildInternalError());
     }
     
     if (!leave_result) {
@@ -196,6 +195,14 @@ GetParticipantsResult RoomService::GetRoomParticipants(const domain::RoomCode& c
     }
 
     return GetParticipantsResult::Ok(room->GetParticipants());
+}
+
+bool RoomService::ParticipantInRoom(
+    const domain::ParticipantId& participant_id,
+    const domain::RoomCode& room_code
+) const
+{
+    return repository_->ParticipantInRoom(participant_id, room_code);
 }
 
 } // namespace buzzweb::app

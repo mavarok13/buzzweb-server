@@ -68,6 +68,7 @@ There is a runnable executable target. Domain, application, minimal WS/WSS netwo
 - Do not send voice/video media over WebSocket except for explicit experiments; media should use WebRTC.
 - Keep domain classes free of Boost, JSON, OpenSSL, WebSocket, SDP, ICE, and network-session details.
 - Let `RoomService` own application-level room mutations. Network classes should call application services instead of modifying rooms directly.
+- Known technical debt: room creation and automatic creator join are currently separate operations. If room creation succeeds but the subsequent join fails, an empty room can remain in the repository. A future fix should make the room visible only after the creator has been added, rather than relying on an unsafe compensating `Remove()`.
 - Current `Room` stores participants in `std::vector<Participant>`, not `std::unordered_map`, because the MVP is expected to use small rooms.
 - Current `Participant` is intentionally minimal: identity and display name only.
 - Keep `RoomRepository` as a storage abstraction so in-memory, Redis, or PostgreSQL storage can be added later.

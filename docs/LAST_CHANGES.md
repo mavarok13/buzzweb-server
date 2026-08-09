@@ -1,17 +1,18 @@
 # Last Changes
 
-Updated: 2026-07-13
+Updated: 2026-08-09
 
 ## Current Implementation Update
 
-- Networking now supports both default TLS WSS and explicit plain WS mode.
-- Runtime config includes `BUZZWEB_TLS_ENABLED`; `0`, `false`, and `FALSE` disable TLS, while TLS remains enabled by default.
-- Certificate and private-key environment variables are required only when TLS is enabled.
-- Sessions are split into shared `SessionBase` behavior plus transport-specific `PlainSession` and `SslSession` implementations.
-- `Listener` chooses `SslSession` or `PlainSession` per server TLS mode, and `SessionRegistry` stores `SessionBase` pointers for both modes.
+- JSON parsing and serialization moved out of `Session` and `ControlDispatcher` into `ProtocolCodec`.
+- Typed command, response, error, participant-event, and signaling payload variants now connect the codec, dispatcher, and network layers.
+- `SessionBase` again handles direct responses, room event delivery, signaling relay availability, and disconnect cleanup for both WS and WSS sessions.
+- `Server` owns one `ControlDispatcher`; sessions share it through `Listener` instead of creating duplicate dispatchers.
+- Signaling membership checks are restored through the thread-safe repository and `RoomService`.
 
 ## Latest Code History Summary
 
+- 2026-08-09: Completed protocol codec and network dispatcher refactor, restored runtime delivery/cleanup, and repaired build wiring.
 - 2026-07-13: Added plain WS runtime mode and refactored session handling into shared base plus TLS/plain implementations.
 - 2026-07-12: Added structured participant event data and tightened leave/disconnect cleanup behavior.
 - 2026-07-11: Added standalone browser WebRTC signaling demo under `client_demo/`.

@@ -51,15 +51,19 @@ public:
     explicit RoomService(domain::RoomRepositoryPtr repository);
     ~RoomService();
 
-    CreateRoomResult CreateRoom(std::optional<std::string> password_hash);
+    CreateRoomResult CreateRoom(std::optional<domain::RoomSecret> password_hash);
     ParticipantJoinedRoomResult JoinRoom(
         const domain::RoomCode& code,
         domain::Participant participant,
-        std::optional<std::string> password_hash
+        std::optional<domain::RoomSecret> password_hash
     );
     ParticipantLeftRoomResult LeaveRoom(const domain::RoomCode& code, const domain::ParticipantId& participant_id);
     ParticipantsLeftRoomResults LeaveAllRooms(const domain::ParticipantId& participant_id);
     GetParticipantsResult GetRoomParticipants(const domain::RoomCode& code) const;
+    bool ParticipantInRoom(
+        const domain::ParticipantId& participant_id,
+        const domain::RoomCode& room_code
+    ) const;
 
 private:
     domain::RoomRepositoryPtr repository_;

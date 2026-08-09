@@ -2,6 +2,16 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-08-09 - Protocol Codec And Network Refactor Completion
+
+- Added `ProtocolCodec.cpp` to the CMake library and completed typed decoding/encoding for room requests, direct responses, stable errors, participant events, and signaling relay events.
+- Refactored `ControlDispatcher` to consume typed commands and return typed response/event variants while retaining room membership validation for signaling.
+- Restored `SessionBase` response delivery, participant event broadcasts, target-session signaling relay, `participant_unavailable`, and disconnect-generated `participant_left` events.
+- Made `Server` own one dispatcher shared by plain WS and TLS WSS sessions and repaired executable constructor wiring.
+- Added thread-safe participant membership lookup to `RoomRepository`/`InMemoryRoomRepository` and exposed it through `RoomService`.
+- Fixed the duplicate default argument in the `Room` constructor definition.
+- Verification: domain sources passed `g++ -std=c++20 -Iinclude -fsyntax-only`; `git diff --check` passed apart from line-ending warnings. Full CMake configure remains blocked by unavailable local Boost package config, and Docker verification remains blocked because the Docker Desktop Linux daemon is not running.
+
 ## 2026-07-13 - Plain WS And TLS Session Modes
 
 - Documented the session refactor from a single TLS-only `Session` into shared `SessionBase` plus transport-specific `PlainSession` and `SslSession`.

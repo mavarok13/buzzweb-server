@@ -10,26 +10,26 @@
 
 namespace buzzweb::domain {
 
-enum AddRoomResult {
+enum class AddRoomResult {
     Added,
     AlreadyExists
 };
-enum UpdateRoomResult {
+enum class UpdateRoomResult {
     Updated,
     NotFound,
     Aborted
 };
-enum RemoveRoomResult {
+enum class RemoveRoomResult {
     Removed,
     NotFound
 };
-enum RemoveEmptyRoomResult {
+enum class RemoveEmptyRoomResult {
     Removed,
     NotEmpty,
     NotFound
 };
 
-enum TransactionResult {
+enum class TransactionResult {
     Commit,
     Abort
 };
@@ -44,6 +44,10 @@ public:
     virtual RemoveRoomResult Remove(const RoomCode& room_code) = 0;
     virtual RemoveEmptyRoomResult RemoveIfEmpty(const RoomCode& room_code) = 0;
     virtual bool Exists(const RoomCode& room_code) const = 0;
+    virtual bool ParticipantInRoom(
+        const ParticipantId& participant_id,
+        const RoomCode& room_code
+    ) const = 0;
     virtual std::vector<RoomCode> GetRoomCodes() const = 0;
 };
 

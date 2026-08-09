@@ -19,6 +19,7 @@ add_library(
     buzzweb_server_lib
     STATIC
         src/app/ControlDispatcher.cpp
+        src/app/ProtocolCodec.cpp
         src/app/RoomService.cpp
         src/domain/InMemoryRoomRepository.cpp
         src/domain/Participant.cpp

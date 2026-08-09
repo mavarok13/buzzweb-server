@@ -21,7 +21,7 @@ struct ServerConfig {
 
 class Server {
 public:
-    Server(ServerConfig config, net::SessionRegistry& registry, app::ControlDispatcher& dispatcher);
+    Server(ServerConfig config, net::SessionRegistry& registry, app::RoomService& room_service);
     ~Server();
 
     void Run();
@@ -34,7 +34,8 @@ private:
     boost::asio::io_context io_context_;
     boost::asio::ssl::context tls_context_;
     SessionRegistry& registry_;
-    app::ControlDispatcher& dispatcher_;
+    app::RoomService& room_service_;
+    app::ControlDispatcher dispatcher_;
     std::unique_ptr<Listener> listener_;
 };
 

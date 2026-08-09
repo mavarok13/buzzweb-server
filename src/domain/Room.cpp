@@ -6,7 +6,7 @@
 
 namespace buzzweb::domain {
 
-Room::Room(RoomCode code, std::optional<RoomSecret> room_secret = std::nullopt)
+Room::Room(RoomCode code, std::optional<RoomSecret> room_secret)
     : code_(std::move(code)), room_secret_(std::move(room_secret))
 {
 }

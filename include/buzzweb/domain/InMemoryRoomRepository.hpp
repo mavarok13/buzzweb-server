@@ -18,6 +18,10 @@ public:
     RemoveRoomResult Remove(const RoomCode& room_code) override;
     RemoveEmptyRoomResult RemoveIfEmpty(const RoomCode& room_code) override;
     bool Exists(const RoomCode& room_code) const override;
+    bool ParticipantInRoom(
+        const ParticipantId& participant_id,
+        const RoomCode& room_code
+    ) const override;
     std::vector<RoomCode> GetRoomCodes() const override;
 
 private:

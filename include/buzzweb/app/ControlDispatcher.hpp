@@ -4,10 +4,12 @@
 #include "buzzweb/domain/Participant.hpp"
 #include "buzzweb/domain/Room.hpp"
 
-#include <functional>
 #include <nlohmann/json.hpp>
+
+#include <functional>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace buzzweb::app {
@@ -16,76 +18,151 @@ enum ControlMessageType {
     CreateRoom,
     JoinRoom,
     LeaveRoom,
-    GetRoomParticipants,
+    Signaling
+};
+
+enum SignalingType {
     Offer,
     Answer,
     IceCandidate
 };
 
-enum ControlEventType {
-    Joined,
-    Left
+struct CreateRoomCommand {
+    domain::Participant participant;
+    std::optional<domain::RoomSecret> password_hash;
 };
-
-struct ControlMessage {
-    ControlMessageType type;
-    std::optional<std::string> request_id;
-    nlohmann::json payload;
+struct JoinRoomCommand {
+    domain::RoomCode room_code;
+    domain::Participant participant;
+    std::optional<domain::RoomSecret> password_hash;
 };
-
-struct ControlError {
-    std::string code;
-    std::string message;
+struct LeaveRoomCommand {
+    domain::RoomCode room_code;
+    domain::ParticipantId participant_id;
 };
-
-struct ControlResponse {
-    ControlMessageType type;
-    std::optional<std::string> request_id;
-    bool ok;
-    nlohmann::json payload;
-    std::optional<ControlError> error;
-};
-
-struct ControlRelay {
-public:
-    ControlMessageType type;
-    domain::ParticipantId target_participant_id;
+struct SignalingCommand {
+    SignalingType type;
+    domain::RoomCode room_code;
     domain::ParticipantId from_participant_id;
-    domain::RoomCode room_code;
-    nlohmann::json payload;
+    domain::ParticipantId target_participant_id;
+    nlohmann::json data;
 };
 
-struct ControlEventData {
-public:
-    ControlEventType type;
-    domain::RoomCode room_code;
-    domain::ParticipantId sender_participant_id;
-    nlohmann::json payload;
+struct RequestMeta {
+    ControlMessageType type;
+    std::optional<std::string> request_id;
+    std::optional<SignalingType> signaling_type = std::nullopt;
+};
+struct ControlDispatcherRequest {
+    using CommandType = std::variant<
+        CreateRoomCommand,
+        JoinRoomCommand,
+        LeaveRoomCommand,
+        SignalingCommand
+    >;
+
+    RequestMeta meta;
+    CommandType command;
 };
 
-using Participants = std::vector<domain::Participant>;
+struct CreateRoomResponse {
+    domain::RoomCode room_code;
+    domain::Participant participant;
+    std::vector<domain::Participant> participants;
+};
+struct JoinRoomResponse {
+    domain::RoomCode room_code;
+    domain::Participant participant;
+    std::vector<domain::Participant> participants;
+};
+struct LeaveRoomResponse {
+    domain::RoomCode room_code;
+};
+struct SignalingResponse {
+    SignalingType type;
+    domain::RoomCode room_code;
+    domain::ParticipantId from_participant_id;
+    domain::ParticipantId target_participant_id;
+    nlohmann::json data;
+};
 
-using ControlSendHandler = std::function<void(const ControlResponse& response)>;
-using ControlEventHandler = std::function<void(const ControlEventData& event, const Participants& participants)>;
-using ControlRelayHandler = std::function<bool(const app::ControlRelay& relay)>;
+struct RoomAlreadyExistsResponse {};
+struct RoomCodeGenerationFailedResponse {};
+struct NotInRoomResponse {};
+struct AlreadyInRoomResponse {};
+struct WrongPasswordResponse {};
+struct PasswordNotProvidedResponse {};
+struct RoomNotFoundResponse {};
+struct ParticipantUnavailableResponse {};
+struct InternalErrorResponse {};
+struct UnexpectedErrorResponse {};
+
+using ResponseMeta = RequestMeta;
+struct SuccessResponse {
+    using SuccessResponsePayload = std::variant<
+        CreateRoomResponse,
+        JoinRoomResponse,
+        LeaveRoomResponse,
+        SignalingResponse
+    >;
+
+    ResponseMeta meta;
+    SuccessResponsePayload payload;
+};
+struct ErrorResponse {
+    using ErrorResponsePayload = std::variant<
+        RoomAlreadyExistsResponse,
+        RoomCodeGenerationFailedResponse,
+        NotInRoomResponse,
+        AlreadyInRoomResponse,
+        WrongPasswordResponse,
+        PasswordNotProvidedResponse,
+        RoomNotFoundResponse,
+        ParticipantUnavailableResponse,
+        InternalErrorResponse,
+        UnexpectedErrorResponse
+    >;
+
+    ResponseMeta meta;
+    ErrorResponsePayload payload;
+};
+
+using ControlDispatcherResponse = std::variant<SuccessResponse, ErrorResponse>;
+
+struct JoinedRoomEvent {
+    domain::RoomCode room_code;
+    domain::Participant joined_participant;
+    std::vector<domain::Participant> event_receivers;
+};
+struct LeftRoomEvent {
+    domain::RoomCode room_code;
+    domain::ParticipantId left_participant_id;
+    std::vector<domain::Participant> event_receivers;
+};
+
+using ControlDispatcherEvent = std::variant<JoinedRoomEvent, LeftRoomEvent>;
+
+struct ControlDispatcherResult {
+    ControlDispatcherResponse response;
+    std::vector<ControlDispatcherEvent> events;
+};
+
 
 class ControlDispatcher {
 public:
-    explicit ControlDispatcher(RoomService& room_service, ControlEventHandler event_handler);
+    using Handler = std::function<void(const ControlDispatcherResult& response)>;
+
+    explicit ControlDispatcher(RoomService& room_service);
     ~ControlDispatcher();
 
-    void Dispatch(
-        const domain::ParticipantId& participant_id,
-        const ControlMessage& message,
-        ControlSendHandler send,
-        ControlRelayHandler replay
-    );
+    void Dispatch(const ControlDispatcherRequest& request, Handler handler);
 
-    void HandleParticipantDisconnected(const domain::ParticipantId& participant_id);
+    std::vector<ControlDispatcherEvent> HandleParticipantDisconnected(
+        const domain::ParticipantId& participant_id
+    );
 
 private:
     RoomService& room_service_;
-    ControlEventHandler event_handler_;
 };
 
 } // namespace buzzweb::app

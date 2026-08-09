@@ -89,6 +89,16 @@ bool InMemoryRoomRepository::Exists(const RoomCode& room_code) const
     return rooms_.contains(room_code);
 }
 
+bool InMemoryRoomRepository::ParticipantInRoom(
+    const ParticipantId& participant_id,
+    const RoomCode& room_code
+) const
+{
+    std::lock_guard lock(mutex_);
+    const auto room = rooms_.find(room_code);
+    return room != rooms_.end() && room->second.HasParticipant(participant_id);
+}
+
 std::vector<RoomCode> InMemoryRoomRepository::GetRoomCodes() const
 {
     std::lock_guard lock(mutex_);
