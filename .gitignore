@@ -73,3 +73,9 @@ Testing/
 
 # Security
 certs/
+# codebase-index cache (machine-local; do not commit)
+.claude/cache/codebase-index/
+
+# agents
+.opencode/
+session-*
