@@ -44,6 +44,9 @@ build/
 Build/
 build-*/
 
+# Build files
+build.log
+
 # CMake generated files
 CMakeFiles/
 CMakeCache.txt
@@ -68,6 +71,8 @@ vcpkg_installed/
 Testing/
 .cache/
 
+# Security
+certs/
 # codebase-index cache (machine-local; do not commit)
 .claude/cache/codebase-index/
 

@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BuzzWeb WebRTC Signaling Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10131a;
+      --panel: #171c26;
+      --panel-2: #1f2633;
+      --line: #30394a;
+      --text: #edf2ff;
+      --muted: #a9b3c6;
+      --accent: #68d391;
+      --accent-2: #63b3ed;
+      --danger: #fc8181;
+      --warn: #f6e05e;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #23304a 0, transparent 32rem), var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    header {
+      padding: 28px min(5vw, 48px) 12px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 4vw, 2.8rem);
+      letter-spacing: -0.04em;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: 18px;
+      padding: 16px min(5vw, 48px) 36px;
+    }
+
+    section,
+    .card {
+      background: color-mix(in srgb, var(--panel) 92%, black);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 40px rgb(0 0 0 / 0.26);
+    }
+
+    section {
+      padding: 18px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #cbd5e0;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px rgb(99 179 237 / 0.16);
+    }
+
+    button {
+      min-height: 42px;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 10px;
+      background: #2d3748;
+      color: var(--text);
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    button:hover {
+      filter: brightness(1.12);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      filter: none;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #38a169, #2b6cb0);
+    }
+
+    .danger {
+      background: #9b2c2c;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgb(255 255 255 / 0.03);
+    }
+
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .status-line strong {
+      color: var(--text);
+      font-weight: 750;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    .hint,
+    .error {
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+    }
+
+    .hint {
+      border: 1px solid rgb(246 224 94 / 0.45);
+      background: rgb(246 224 94 / 0.1);
+      color: #faf089;
+    }
+
+    .error {
+      display: none;
+      border: 1px solid rgb(252 129 129 / 0.4);
+      background: rgb(252 129 129 / 0.1);
+      color: #fed7d7;
+      white-space: pre-wrap;
+    }
+
+    .participants {
+      display: grid;
+      gap: 8px;
+    }
+
+    .participant {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgb(255 255 255 / 0.03);
+    }
+
+    .participant small {
+      display: block;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .participant button {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
+    .right-pane {
+      display: grid;
+      gap: 18px;
+    }
+
+    .videos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .video-card {
+      overflow: hidden;
+    }
+
+    .video-card h2 {
+      padding: 14px 14px 0;
+      margin-bottom: 10px;
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background: #05070b;
+      border-top: 1px solid var(--line);
+    }
+
+    .log-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .logs {
+      display: grid;
+      gap: 10px;
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .log-entry {
+      border: 1px solid var(--line);
+      border-left-width: 5px;
+      border-radius: 10px;
+      background: #0b0f16;
+      overflow: hidden;
+    }
+
+    .log-entry.in {
+      border-left-color: var(--accent-2);
+    }
+
+    .log-entry.out {
+      border-left-color: var(--accent);
+    }
+
+    .log-entry.error-log {
+      border-left-color: var(--danger);
+    }
+
+    .log-entry.system {
+      border-left-color: var(--warn);
+    }
+
+    .log-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      font-size: 0.82rem;
+    }
+
+    pre {
+      margin: 0;
+      padding: 10px;
+      overflow: auto;
+      color: #d6e4ff;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.82rem;
+      line-height: 1.42;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 900px) {
+      main,
+      .videos,
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WebRTC Signaling Demo</h1>
+    <p>Use two browser tabs. The C++ WebSocket/WSS server relays JSON signaling only; media flows directly through WebRTC.</p>
+  </header>
+
+  <main>
+    <div class="stack">
+      <section class="stack">
+        <h2>WebSocket</h2>
+        <label>
+          Endpoint
+          <input id="endpoint" value="wss://localhost:8443" placeholder="wss://localhost:8443 or ws://localhost:8080" autocomplete="off">
+        </label>
+        <div id="certHint" class="hint">For `wss://localhost` with a self-signed certificate, the browser may require opening the endpoint URL manually first and accepting the certificate warning.</div>
+        <div class="button-row">
+          <button id="connectBtn" class="primary">Connect</button>
+          <button id="disconnectBtn">Disconnect</button>
+        </div>
+        <div class="status-grid">
+          <div class="status-line"><span>WebSocket</span><strong id="wsState">disconnected</strong></div>
+          <div class="status-line"><span>PeerConnection</span><strong id="pcState">not created</strong></div>
+          <div class="status-line"><span>ICE</span><strong id="iceState">not started</strong></div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <h2>Room</h2>
+        <div class="row">
+          <label>
+            Display name
+            <input id="displayName" value="Alice" placeholder="Alice" autocomplete="name">
+          </label>
+          <label>
+            Password
+            <input id="password" placeholder="optional" autocomplete="off">
+          </label>
+        </div>
+        <label>
+          Room code for join
+          <input id="joinRoomCode" placeholder="742913" autocomplete="off">
+        </label>
+        <div class="button-row">
+          <button id="createRoomBtn" class="primary">Create Room</button>
+          <button id="joinRoomBtn" class="primary">Join Room</button>
+          <button id="leaveRoomBtn">Leave Room</button>
+        </div>
+        <div class="status-grid">
+          <div class="status-line"><span>Current room</span><strong id="roomCode">none</strong></div>
+          <div class="status-line"><span>My participant id</span><strong id="ownParticipantId">none</strong></div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <h2>Participants</h2>
+        <label>
+          Target participant id
+          <input id="targetParticipantId" placeholder="paste or click a participant" autocomplete="off">
+        </label>
+        <div id="participants" class="participants"></div>
+      </section>
+
+      <section class="stack">
+        <h2>Call</h2>
+        <div class="button-row">
+          <button id="startCallBtn" class="primary">Start Call</button>
+          <button id="hangupBtn" class="danger">Hang Up / Reset Peer</button>
+        </div>
+        <div id="errorBox" class="error"></div>
+      </section>
+    </div>
+
+    <div class="right-pane">
+      <div class="videos">
+        <div class="card video-card">
+          <h2>Local Preview</h2>
+          <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="card video-card">
+          <h2>Remote Video</h2>
+          <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+      </div>
+
+      <section>
+        <div class="log-toolbar">
+          <h2 style="margin: 0;">JSON Log</h2>
+          <button id="clearLogBtn">Clear Log</button>
+        </div>
+        <div id="logs" class="logs"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+
+    const state = {
+      ws: null,
+      pc: null,
+      localStream: null,
+      remoteStream: null,
+      pendingIceCandidates: [],
+      requestCounter: 0,
+      roomCode: "",
+      ownParticipantId: "",
+      participants: new Map()
+    };
+
+    const rtcConfig = {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    };
+
+    function now() {
+      return new Date().toLocaleTimeString();
+    }
+
+    function nextRequestId() {
+      state.requestCounter += 1;
+      return `req-${Date.now()}-${state.requestCounter}`;
+    }
+
+    function showError(message) {
+      const box = el("errorBox");
+      box.textContent = message;
+      box.style.display = message ? "block" : "none";
+      if (message) {
+        addLog("error", "Error", message);
+      }
+    }
+
+    function addLog(kind, title, value) {
+      const logs = el("logs");
+      const entry = document.createElement("div");
+      entry.className = `log-entry ${kind === "error" ? "error-log" : kind}`;
+
+      const head = document.createElement("div");
+      head.className = "log-head";
+      head.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${now()}</span>`;
+
+      const pre = document.createElement("pre");
+      pre.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+      entry.append(head, pre);
+      logs.append(entry);
+      logs.scrollTop = logs.scrollHeight;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function updateStatus() {
+      el("wsState").textContent = state.ws ? ["connecting", "open", "closing", "closed"][state.ws.readyState] : "disconnected";
+      el("pcState").textContent = state.pc ? state.pc.connectionState : "not created";
+      el("iceState").textContent = state.pc ? state.pc.iceConnectionState : "not started";
+      el("roomCode").textContent = state.roomCode || "none";
+      el("ownParticipantId").textContent = state.ownParticipantId || "none";
+
+      const connected = Boolean(state.ws && state.ws.readyState === WebSocket.OPEN);
+      el("connectBtn").disabled = Boolean(state.ws && state.ws.readyState === WebSocket.CONNECTING);
+      el("disconnectBtn").disabled = !state.ws || state.ws.readyState >= WebSocket.CLOSING;
+      el("createRoomBtn").disabled = !connected;
+      el("joinRoomBtn").disabled = !connected;
+      el("leaveRoomBtn").disabled = !connected || !state.roomCode;
+      el("startCallBtn").disabled = !connected || !state.roomCode;
+    }
+
+    function updateCertHint() {
+      const endpoint = el("endpoint").value.trim().toLowerCase();
+      const isLocalWss = endpoint.startsWith("wss://localhost") || endpoint.startsWith("wss://127.0.0.1") || endpoint.startsWith("wss://[::1]");
+      el("certHint").style.display = isLocalWss ? "block" : "none";
+    }
+
+    function renderParticipants() {
+      const list = el("participants");
+      list.innerHTML = "";
+
+      const participants = [...state.participants.values()];
+      if (participants.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "No participants known yet.";
+        list.append(empty);
+        return;
+      }
+
+      for (const participant of participants) {
+        const id = participant.participant_id || participant.id || "";
+        const name = participant.display_name || "Unnamed";
+        const item = document.createElement("div");
+        item.className = "participant";
+
+        const text = document.createElement("div");
+        text.innerHTML = `<strong>${escapeHtml(name)}${id === state.ownParticipantId ? " (you)" : ""}</strong><small>${escapeHtml(id)}</small>`;
+
+        const button = document.createElement("button");
+        button.textContent = "Use Target";
+        button.disabled = !id || id === state.ownParticipantId;
+        button.addEventListener("click", () => {
+          el("targetParticipantId").value = id;
+          showError("");
+        });
+
+        item.append(text, button);
+        list.append(item);
+      }
+    }
+
+    function rememberParticipants(participants) {
+      if (!Array.isArray(participants)) {
+        return;
+      }
+
+      state.participants.clear();
+      for (const participant of participants) {
+        const id = participant.participant_id || participant.id;
+        if (id) {
+          state.participants.set(id, participant);
+        }
+      }
+
+      const other = [...state.participants.keys()].find((id) => id !== state.ownParticipantId);
+      if (other && !el("targetParticipantId").value.trim()) {
+        el("targetParticipantId").value = other;
+      }
+
+      renderParticipants();
+    }
+
+    function applyRoomPayload(payload) {
+      state.roomCode = payload.room_code || state.roomCode;
+      if (payload.participant) {
+        state.ownParticipantId = payload.participant.participant_id || payload.participant.id || state.ownParticipantId;
+      }
+      rememberParticipants(payload.participants || []);
+      updateStatus();
+    }
+
+    function connectWebSocket() {
+      showError("");
+      const endpoint = el("endpoint").value.trim();
+      if (!endpoint) {
+        showError("Enter a WebSocket endpoint first.");
+        return;
+      }
+
+      if (state.ws && state.ws.readyState < WebSocket.CLOSING) {
+        showError("WebSocket is already connecting or connected.");
+        return;
+      }
+
+      try {
+        state.ws = new WebSocket(endpoint);
+      } catch (error) {
+        showError(`Failed to create WebSocket: ${error.message}`);
+        return;
+      }
+
+      updateStatus();
+      addLog("system", "WebSocket", `Connecting to ${endpoint}`);
+
+      state.ws.addEventListener("open", () => {
+        showError("");
+        addLog("system", "WebSocket", "Connected");
+        updateStatus();
+      });
+
+      state.ws.addEventListener("message", (event) => {
+        let message;
+        try {
+          message = JSON.parse(event.data);
+        } catch (error) {
+          showError(`Received invalid JSON: ${error.message}`);
+          addLog("in", "Incoming Raw", event.data);
+          return;
+        }
+
+        addLog("in", `Incoming ${message.type || "message"}`, message);
+        handleIncoming(message).catch((error) => showError(error.message || String(error)));
+      });
+
+      state.ws.addEventListener("error", () => {
+        showError("WebSocket error. If this is wss://localhost with a self-signed certificate, open the endpoint URL manually first and accept the browser certificate warning.");
+        updateStatus();
+      });
+
+      state.ws.addEventListener("close", (event) => {
+        addLog("system", "WebSocket", `Closed: code=${event.code} reason=${event.reason || "none"}`);
+        state.ws = null;
+        updateStatus();
+      });
+    }
+
+    function disconnectWebSocket() {
+      if (state.ws && state.ws.readyState < WebSocket.CLOSING) {
+        state.ws.close(1000, "client disconnect");
+      }
+      state.ws = null;
+      updateStatus();
+    }
+
+    function sendRequest(type, payload) {
+      if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+        throw new Error("WebSocket is not connected.");
+      }
+
+      const message = {
+        type,
+        request_id: nextRequestId(),
+        payload
+      };
+
+      state.ws.send(JSON.stringify(message));
+      addLog("out", `Outgoing ${type}`, message);
+      return message.request_id;
+    }
+
+    function createRoom() {
+      showError("");
+      const displayName = el("displayName").value.trim();
+      if (!displayName) {
+        showError("Display name is required.");
+        return;
+      }
+
+      const payload = { display_name: displayName };
+      const password = el("password").value;
+      if (password) {
+        payload.password = password;
+      }
+
+      try {
+        sendRequest("create_room", payload);
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function joinRoom() {
+      showError("");
+      const displayName = el("displayName").value.trim();
+      const roomCode = el("joinRoomCode").value.trim();
+      if (!displayName || !roomCode) {
+        showError("Display name and room code are required.");
+        return;
+      }
+
+      const payload = {
+        room_code: roomCode,
+        display_name: displayName
+      };
+      const password = el("password").value;
+      if (password) {
+        payload.password = password;
+      }
+
+      try {
+        sendRequest("join_room", payload);
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function leaveRoom() {
+      showError("");
+      if (!state.roomCode) {
+        showError("There is no current room to leave.");
+        return;
+      }
+
+      try {
+        sendRequest("leave_room", { room_code: state.roomCode });
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    async function handleIncoming(message) {
+      if (message.type && message.type.endsWith("_result")) {
+        handleResult(message);
+        return;
+      }
+
+      const payload = message.payload || {};
+      switch (message.type) {
+        case "participant_joined":
+          if (payload.participants) {
+            rememberParticipants(payload.participants);
+          } else if (payload.participant) {
+            const id = payload.participant.participant_id || payload.participant.id;
+            if (id) {
+              state.participants.set(id, payload.participant);
+              renderParticipants();
+            }
+          }
+          break;
+        case "participant_left":
+          if (payload.participants) {
+            rememberParticipants(payload.participants);
+          } else if (payload.participant_id) {
+            state.participants.delete(payload.participant_id);
+            renderParticipants();
+          }
+          break;
+        case "offer":
+          await receiveOffer(payload);
+          break;
+        case "answer":
+          await receiveAnswer(payload);
+          break;
+        case "ice_candidate":
+          await receiveIceCandidate(payload);
+          break;
+        default:
+          addLog("system", "Unhandled Message", `No demo handler for type '${message.type}'.`);
+          break;
+      }
+    }
+
+    function handleResult(message) {
+      if (!message.ok) {
+        const error = message.error || {};
+        showError(`${error.code || "request_failed"}: ${error.message || "Request failed."}`);
+        return;
+      }
+
+      const payload = message.payload || {};
+      switch (message.type) {
+        case "create_room_result":
+        case "join_room_result":
+          applyRoomPayload(payload);
+          el("joinRoomCode").value = state.roomCode;
+          showError("");
+          break;
+        case "leave_room_result":
+          resetPeerConnection();
+          state.roomCode = "";
+          state.participants.clear();
+          el("targetParticipantId").value = "";
+          renderParticipants();
+          updateStatus();
+          showError("");
+          break;
+        case "offer_result":
+        case "answer_result":
+        case "ice_candidate_result":
+          showError("");
+          break;
+        default:
+          addLog("system", "Unhandled Result", `No demo handler for type '${message.type}'.`);
+          break;
+      }
+    }
+
+    async function getLocalMedia() {
+      if (state.localStream) {
+        return state.localStream;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("navigator.mediaDevices.getUserMedia is not available. Use HTTPS, localhost, or a browser that supports WebRTC.");
+      }
+
+      state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      el("localVideo").srcObject = state.localStream;
+      addLog("system", "Media", "Local microphone/camera stream acquired.");
+      return state.localStream;
+    }
+
+    function ensurePeerConnection() {
+      if (state.pc) {
+        return state.pc;
+      }
+
+      state.remoteStream = new MediaStream();
+      el("remoteVideo").srcObject = state.remoteStream;
+
+      const pc = new RTCPeerConnection(rtcConfig);
+      state.pc = pc;
+
+      pc.addEventListener("track", (event) => {
+        for (const track of event.streams[0]?.getTracks() || [event.track]) {
+          if (!state.remoteStream.getTracks().some((existing) => existing.id === track.id)) {
+            state.remoteStream.addTrack(track);
+          }
+        }
+      });
+
+      pc.addEventListener("icecandidate", (event) => {
+        if (!event.candidate) {
+          return;
+        }
+
+        try {
+          const roomCode = requireRoomCode();
+          const targetParticipantId = requireTargetParticipantId();
+          const candidate = typeof event.candidate.toJSON === "function" ? event.candidate.toJSON() : event.candidate;
+          sendRequest("ice_candidate", {
+            room_code: roomCode,
+            target_participant_id: targetParticipantId,
+            candidate
+          });
+        } catch (error) {
+          showError(`Could not send ICE candidate: ${error.message || String(error)}`);
+        }
+      });
+
+      pc.addEventListener("connectionstatechange", updateStatus);
+      pc.addEventListener("iceconnectionstatechange", updateStatus);
+      pc.addEventListener("signalingstatechange", updateStatus);
+
+      updateStatus();
+      addLog("system", "PeerConnection", "Created RTCPeerConnection with Google STUN server.");
+      return pc;
+    }
+
+    async function addLocalTracks(pc) {
+      const stream = await getLocalMedia();
+      const existingTracks = new Set(pc.getSenders().map((sender) => sender.track).filter(Boolean));
+      for (const track of stream.getTracks()) {
+        if (!existingTracks.has(track)) {
+          pc.addTrack(track, stream);
+        }
+      }
+    }
+
+    function requireRoomCode() {
+      const roomCode = state.roomCode || el("joinRoomCode").value.trim();
+      if (!roomCode) {
+        throw new Error("Current room code is required.");
+      }
+      return roomCode;
+    }
+
+    function requireTargetParticipantId() {
+      const target = el("targetParticipantId").value.trim();
+      if (!target) {
+        throw new Error("Target participant id is required.");
+      }
+      if (target === state.ownParticipantId) {
+        throw new Error("Target participant id must be the other tab, not your own id.");
+      }
+      return target;
+    }
+
+    async function startCall() {
+      showError("");
+      try {
+        const roomCode = requireRoomCode();
+        const targetParticipantId = requireTargetParticipantId();
+        const pc = ensurePeerConnection();
+        await addLocalTracks(pc);
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        sendRequest("offer", {
+          room_code: roomCode,
+          target_participant_id: targetParticipantId,
+          sdp: pc.localDescription.sdp
+        });
+        updateStatus();
+      } catch (error) {
+        showError(error.message || String(error));
+      }
+    }
+
+    async function receiveOffer(payload) {
+      showError("");
+      if (!payload.sdp || !payload.from_participant_id) {
+        throw new Error("Received offer without sdp or from_participant_id.");
+      }
+
+      el("targetParticipantId").value = payload.from_participant_id;
+      state.roomCode = payload.room_code || state.roomCode;
+
+      const pc = ensurePeerConnection();
+      await addLocalTracks(pc);
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: payload.sdp }));
+      await flushPendingIceCandidates();
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      sendRequest("answer", {
+        room_code: requireRoomCode(),
+        target_participant_id: payload.from_participant_id,
+        sdp: pc.localDescription.sdp
+      });
+      updateStatus();
+    }
+
+    async function receiveAnswer(payload) {
+      showError("");
+      if (!payload.sdp) {
+        throw new Error("Received answer without sdp.");
+      }
+      if (payload.from_participant_id) {
+        el("targetParticipantId").value = payload.from_participant_id;
+      }
+
+      const pc = ensurePeerConnection();
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: payload.sdp }));
+      await flushPendingIceCandidates();
+      updateStatus();
+    }
+
+    async function receiveIceCandidate(payload) {
+      showError("");
+      if (!payload.candidate) {
+        return;
+      }
+      if (payload.from_participant_id) {
+        el("targetParticipantId").value = payload.from_participant_id;
+      }
+
+      const pc = ensurePeerConnection();
+      const candidate = new RTCIceCandidate(payload.candidate);
+
+      if (!pc.remoteDescription || !pc.remoteDescription.type) {
+        state.pendingIceCandidates.push(candidate);
+        if (state.pendingIceCandidates.length > 50) {
+          state.pendingIceCandidates.shift();
+        }
+        addLog("system", "ICE Queue", `Queued ICE candidate. Pending: ${state.pendingIceCandidates.length}`);
+        return;
+      }
+
+      await pc.addIceCandidate(candidate);
+    }
+
+    async function flushPendingIceCandidates() {
+      if (!state.pc || !state.pc.remoteDescription || !state.pc.remoteDescription.type) {
+        return;
+      }
+
+      while (state.pendingIceCandidates.length > 0) {
+        const candidate = state.pendingIceCandidates.shift();
+        await state.pc.addIceCandidate(candidate);
+      }
+    }
+
+    function resetPeerConnection() {
+      if (state.pc) {
+        for (const sender of state.pc.getSenders()) {
+          if (sender.track) {
+            state.pc.removeTrack(sender);
+          }
+        }
+        state.pc.close();
+      }
+
+      state.pc = null;
+      state.remoteStream = null;
+      state.pendingIceCandidates = [];
+      el("remoteVideo").srcObject = null;
+      updateStatus();
+      addLog("system", "PeerConnection", "Peer connection reset. Local preview remains available for another call.");
+    }
+
+    function wireUi() {
+      el("connectBtn").addEventListener("click", connectWebSocket);
+      el("disconnectBtn").addEventListener("click", disconnectWebSocket);
+      el("createRoomBtn").addEventListener("click", createRoom);
+      el("joinRoomBtn").addEventListener("click", joinRoom);
+      el("leaveRoomBtn").addEventListener("click", leaveRoom);
+      el("startCallBtn").addEventListener("click", startCall);
+      el("hangupBtn").addEventListener("click", resetPeerConnection);
+      el("clearLogBtn").addEventListener("click", () => { el("logs").innerHTML = ""; });
+      el("endpoint").addEventListener("input", updateCertHint);
+    }
+
+    wireUi();
+    updateCertHint();
+    renderParticipants();
+    updateStatus();
+  </script>
+</body>
+</html>
