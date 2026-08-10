@@ -2,6 +2,13 @@
 
 Keep newest entries first. Append an entry for every completed change, including documentation-only changes.
 
+## 2026-08-10 - Installation And Contribution Guide
+
+- Expanded `README.md` with a Docker plain-WS quick start, development WSS scripts, a local CMake/Ninja build path, runtime environment variables, and browser-demo usage.
+- Added contribution guidance covering repository context, code scope, documentation maintenance, verification reporting, pull requests, and secret handling.
+- Updated `AGENTS.md`, `docs/INFO.md`, `docs/STACK.md`, and `docs/LAST_CHANGES.md` so onboarding and maintenance guidance points to the new README content.
+- Verification: documentation/source inspection and `git diff --check`.
+
 ## 2026-08-09 - Protocol Codec And Network Refactor Completion
 
 - Added `ProtocolCodec.cpp` to the CMake library and completed typed decoding/encoding for room requests, direct responses, stable errors, participant events, and signaling relay events.

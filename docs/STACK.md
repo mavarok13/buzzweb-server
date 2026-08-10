@@ -73,6 +73,7 @@ Likely future settings:
 
 - `Dockerfile` uses `debian:12-slim` and installs `build-essential`, `cmake`, `ninja-build`, Boost, OpenSSL, `nlohmann_json`, and `pkg-config`.
 - Current Docker build command runs CMake configure and builds the `buzzweb_server` executable image.
+- `README.md` provides the supported onboarding commands: a plain-WS Docker quick start, WSS development scripts, and a local CMake/Ninja build path.
 - No `docker-compose.yml` exists yet.
 - A realistic deployment will likely need the signaling server container plus external `coturn`, and optionally a reverse proxy.
 
@@ -85,6 +86,7 @@ Likely future ports:
 
 ## Tooling Notes
 
+- Contributor setup, verification expectations, documentation maintenance, and pull-request guidance are documented in `README.md` and `AGENTS.md`.
 - `.opencode/` contains local assistant/tooling configuration, including `codebase-index` support.
 - `.claude/cache/codebase-index/` contains local index cache data.
 - `build/` contains generated CMake files from previous local configure attempts and is ignored by git.

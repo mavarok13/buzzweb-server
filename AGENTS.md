@@ -5,12 +5,13 @@ Repository guidance for future coding agents. Start here before changing code.
 ## Read Order
 
 1. Read this file.
-2. Read `docs/INFO.md` for the short project summary and current feature state.
-3. Read `docs/STACK.md` for language, libraries, build, deploy, and runtime notes.
-4. Read `docs/ARCHITECTURE.md` for planned component boundaries and data flow.
-5. Read `docs/ROADMAP.md` for planned work and known future directions.
-6. Read `docs/LAST_CHANGES.md` and `docs/CHANGELOGS.md` before editing, so new work continues from the latest context.
-7. Read `session-ses_115d.md` for planning context and `session-ses_114d.md` for the initial development context when making architecture-level changes.
+2. Read `README.md` for user-facing installation, runtime, and contribution instructions.
+3. Read `docs/INFO.md` for the short project summary and current feature state.
+4. Read `docs/STACK.md` for language, libraries, build, deploy, and runtime notes.
+5. Read `docs/ARCHITECTURE.md` for planned component boundaries and data flow.
+6. Read `docs/ROADMAP.md` for planned work and known future directions.
+7. Read `docs/LAST_CHANGES.md` and `docs/CHANGELOGS.md` before editing, so new work continues from the latest context.
+8. Read `session-ses_115d.md` for planning context and `session-ses_114d.md` for the initial development context when making architecture-level changes.
 
 This is useful, but not guaranteed automatically by every agent runtime. Agents that support repository instructions often auto-load `AGENTS.md`; agents that do not should be explicitly told to read it.
 
@@ -24,6 +25,7 @@ After any project change, update the context docs when relevant:
 - Update `docs/ROADMAP.md` if planned work, priorities, or known future directions change.
 - Update `docs/LAST_CHANGES.md` with the newest concise summary.
 - Append a dated entry to `docs/CHANGELOGS.md` for every completed change, including documentation-only changes.
+- Keep `README.md` installation, runtime configuration, and contribution instructions aligned with the actual build and development workflow.
 
 Keep changelog entries newest first. Mention files or areas touched, why they changed, and any verification done.
 
@@ -43,6 +45,7 @@ If the index is missing, run `codebase-index index`. If it is stale, run `codeba
 
 ## Project Map
 
+- `README.md` is the user-facing entry point for installation, local/Docker startup, runtime configuration, and contribution instructions.
 - `CMakeLists.txt` defines the compiled `buzzweb_server_lib` static library, `BuzzWeb::Server` alias, and `buzzweb_server` executable.
 - `Dockerfile` defines a Debian 12 build environment with CMake, Ninja, Boost, OpenSSL, and `nlohmann_json` packages.
 - `include/buzzweb/domain/` contains room-domain declarations: `Room`, `Participant`, `RoomRepository`, and `InMemoryRoomRepository`.

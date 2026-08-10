@@ -11,6 +11,7 @@
 - CMake currently defines a compiled static library target named `buzzweb_server_lib`, alias `BuzzWeb::Server`, and executable target `buzzweb_server`.
 - Dockerfile exists as a dependency-contained build environment for configuring and building the executable image.
 - `client_demo/index.html` is a standalone browser test client for two-tab room signaling and real peer-to-peer WebRTC audio/video using the server only as a signaling relay.
+- `README.md` documents Docker and local installation, WS/WSS startup, runtime environment variables, browser-demo usage, and the contribution workflow.
 
 ## Intended MVP Features
 

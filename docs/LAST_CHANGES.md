@@ -1,9 +1,11 @@
 # Last Changes
 
-Updated: 2026-08-09
+Updated: 2026-08-10
 
 ## Current Implementation Update
 
+- Expanded `README.md` with Docker and local installation, plain WS and TLS/WSS startup, runtime configuration, browser-demo usage, and contribution instructions.
+- Updated agent and project guidance so future build/runtime documentation remains aligned with the implementation and documentation-only changes follow the same maintenance workflow.
 - JSON parsing and serialization moved out of `Session` and `ControlDispatcher` into `ProtocolCodec`.
 - Typed command, response, error, participant-event, and signaling payload variants now connect the codec, dispatcher, and network layers.
 - `SessionBase` again handles direct responses, room event delivery, signaling relay availability, and disconnect cleanup for both WS and WSS sessions.
@@ -12,6 +14,7 @@ Updated: 2026-08-09
 
 ## Latest Code History Summary
 
+- 2026-08-10: Added installation, startup, runtime configuration, and contribution documentation and synchronized project guidance.
 - 2026-08-09: Completed protocol codec and network dispatcher refactor, restored runtime delivery/cleanup, and repaired build wiring.
 - 2026-07-13: Added plain WS runtime mode and refactored session handling into shared base plus TLS/plain implementations.
 - 2026-07-12: Added structured participant event data and tightened leave/disconnect cleanup behavior.
